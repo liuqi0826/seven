@@ -6,9 +6,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/liuqi0826/seven/events"
+	"github.com/liuqi0826/seven/utils"
 	"io"
-	"seven/events"
-	"seven/utils"
 	"time"
 
 	"github.com/gorilla/websocket"

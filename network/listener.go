@@ -1,9 +1,9 @@
 package network
 
 import (
+	"github.com/liuqi0826/seven/utils"
 	"net"
 	"net/http"
-	"seven/utils"
 
 	"github.com/gorilla/websocket"
 )
