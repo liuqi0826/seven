@@ -67,6 +67,7 @@ func (this *Route) onData(ds *DataStruct) {
 			go this.Default(ds)
 		} else {
 			fmt.Println("Default route handle function is null")
+			fmt.Println("Route code is: " + fmt.Sprintf("%d", ds.Title))
 		}
 	}
 }

@@ -6,9 +6,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/liuqi0826/seven/events"
+	"github.com/liuqi0826/seven/utils"
 	"io"
-	"seven/events"
-	"seven/utils"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -154,7 +154,6 @@ type Network struct {
 	events.EventDispatcher
 	Alive       bool
 	Index       uint16
-	CloseSignal chan int
 	CreateTime  int64
 	Deadline    int64
 	Router      *Route
@@ -166,7 +165,6 @@ type Network struct {
 
 func (this *Network) Network() {
 	this.EventDispatcher.EventDispatcher()
-	this.CloseSignal = make(chan int)
 	this.Router = new(Route)
 	this.Router.Route()
 	this.Router.addHandle(uint16(0), this.pong)
@@ -204,9 +202,11 @@ func (this *Network) GetConnectType() string {
 	return this.connectType
 }
 func (this *Network) Send(data *DataStruct) {
-	this.Index += 1
-	data.SendIndex = this.Index
-	go this.write(data)
+	if this != nil {
+		this.Index += 1
+		data.SendIndex = this.Index
+		go this.write(data)
+	}
 }
 func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)) {
 	this.Index += 1
@@ -225,16 +225,15 @@ func (this *Network) RemoveHandle(title uint16) error {
 }
 func (this *Network) Close() error {
 	var err error
-	this.Alive = false
-	err = this.connect.Close()
-	if err == nil {
-		this.CloseSignal <- 0
+	if this != nil && this.Alive {
+		this.Alive = false
+		err = this.connect.Close()
+		evt := new(events.Event)
+		evt.Type = events.CLOSE
+		this.DispatchEvent(evt)
 	} else {
-		this.CloseSignal <- 1
+		err = errors.New("Network is closed!")
 	}
-	evt := new(events.Event)
-	evt.Type = events.CLOSE
-	this.DispatchEvent(evt)
 	return err
 }
 func (this *Network) listen() {
@@ -309,15 +308,14 @@ func (this *Network) read() {
 					}
 				}
 			} else {
-				this.errorCount += 1
-				if this.errorCount >= 100 {
-					fmt.Println(err)
-					this.Alive = false
-					this.connect.Close()
-					this.CloseSignal <- 1
-					evt := new(events.Event)
-					evt.Type = events.CLOSE
-					this.DispatchEvent(evt)
+				this.errorCount++
+				evt := new(events.Event)
+				evt.Type = events.ERROR
+				evt.Data = err
+				this.DispatchEvent(evt)
+				if this.errorCount >= 10 {
+					this.Close()
+					break
 				}
 			}
 		} else {
