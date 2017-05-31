@@ -88,8 +88,8 @@ func (this *Vector4) Normalize() {
 		this.Z = this.Z * oneOverMag
 	}
 }
-func (this *Vector4) CrossProduct(v *Vector4) Vector4 {
-	return Vector4{X: this.Y*v.Z - this.Z*v.Y, Y: this.Z*v.X - this.X*v.Z, Z: this.X*v.Y - this.Y*v.X, W: 1.0}
+func (this *Vector4) CrossProduct(v *Vector4) *Vector4 {
+	return &Vector4{X: this.Y*v.Z - this.Z*v.Y, Y: this.Z*v.X - this.X*v.Z, Z: this.X*v.Y - this.Y*v.X, W: 1.0}
 }
 func (this *Vector4) DotProduct(v *Vector4) float32 {
 	return this.X*v.X + this.Y*v.Y + this.Z*v.Z
@@ -101,8 +101,8 @@ func (this *Vector4) Project() {
 	this.Z = this.Z * oneOverW
 	this.W = 1.0
 }
-func (this *Vector4) Negate() Vector4 {
-	return Vector4{X: -this.X, Y: -this.Y, Z: -this.Z, W: 1.0}
+func (this *Vector4) Negate() *Vector4 {
+	return &Vector4{X: -this.X, Y: -this.Y, Z: -this.Z, W: 1.0}
 }
 func (this *Vector4) Scale(v float32) {
 	this.X = this.X * v

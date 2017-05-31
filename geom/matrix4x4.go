@@ -192,28 +192,28 @@ func (this *Matrix4x4) PrependTranslation(x float32, y float32, z float32) {
 	mtx.raw[14] = z
 	this.Prepend(mtx)
 }
-func (this *Matrix4x4) DeltaTransformVector(v *Vector4) Vector4 {
+func (this *Matrix4x4) DeltaTransformVector(v *Vector4) *Vector4 {
 	x, y, z := v.X, v.Y, v.Z
-	return Vector4{X: x*this.raw[0] + y*this.raw[4] + z*this.raw[8] + this.raw[3], Y: x*this.raw[1] + y*this.raw[5] + z*this.raw[9] + this.raw[7], Z: x*this.raw[2] + y*this.raw[6] + z*this.raw[10] + this.raw[11], W: 1.0}
+	return &Vector4{X: x*this.raw[0] + y*this.raw[4] + z*this.raw[8] + this.raw[3], Y: x*this.raw[1] + y*this.raw[5] + z*this.raw[9] + this.raw[7], Z: x*this.raw[2] + y*this.raw[6] + z*this.raw[10] + this.raw[11], W: 1.0}
 }
-func (this *Matrix4x4) TransformVector(v *Vector4) Vector4 {
+func (this *Matrix4x4) TransformVector(v *Vector4) *Vector4 {
 	var target Vector4
 	target.X = v.X*this.raw[0] + v.Y*this.raw[4] + v.Z*this.raw[8]
 	target.Y = v.X*this.raw[1] + v.Y*this.raw[5] + v.Z*this.raw[9]
 	target.Z = v.X*this.raw[2] + v.Y*this.raw[6] + v.Z*this.raw[10]
 	target.W = v.X*this.raw[3] + v.Y*this.raw[7] + v.Z*this.raw[11]
-	return target
+	return &target
 }
-func (this *Matrix4x4) TransformVectorList(vl []Vector4) []Vector4 {
-	var tl []Vector4
+func (this *Matrix4x4) TransformVectorList(vl []*Vector4) []*Vector4 {
+	var tl []*Vector4
 	for _, v := range vl {
-		tg := this.TransformVector(&v)
+		tg := this.TransformVector(v)
 		tl = append(tl, tg)
 	}
 	return tl
 }
-func (this *Matrix4x4) Decompose(orientationStyle string) [3]Vector4 {
-	vec := [3]Vector4{}
+func (this *Matrix4x4) Decompose(orientationStyle string) [3]*Vector4 {
+	vec := [3]*Vector4{}
 	mr := this.GetRaw()
 	pos := Vector4{X: mr[12], Y: mr[13], Z: mr[14], W: 1.0}
 	mr[12], mr[13], mr[14] = 0, 0, 0
@@ -285,9 +285,9 @@ func (this *Matrix4x4) Decompose(orientationStyle string) [3]Vector4 {
 			rot.X = float32(math.Atan2(float64(mr[4]), float64(mr[5])))
 		}
 	}
-	vec[0] = pos
-	vec[1] = rot
-	vec[2] = scale
+	vec[0] = &pos
+	vec[1] = &rot
+	vec[2] = &scale
 	return vec
 }
 func (this *Matrix4x4) Recompose(components [3]Vector4, orientationStyle string) bool {
@@ -365,8 +365,8 @@ func (this *Matrix4x4) Recompose(components [3]Vector4, orientationStyle string)
 func (this *Matrix4x4) Determinant() float32 {
 	return ((this.raw[0]*this.raw[5]-this.raw[4]*this.raw[1])*(this.raw[10]*this.raw[15]-this.raw[14]*this.raw[11]) - (this.raw[0]*this.raw[9]-this.raw[8]*this.raw[1])*(this.raw[6]*this.raw[15]-this.raw[14]*this.raw[7]) + (this.raw[0]*this.raw[13]-this.raw[12]*this.raw[1])*(this.raw[6]*this.raw[11]-this.raw[10]*this.raw[7]) + (this.raw[4]*this.raw[9]-this.raw[8]*this.raw[5])*(this.raw[2]*this.raw[15]-this.raw[14]*this.raw[3]) - (this.raw[4]*this.raw[13]-this.raw[12]*this.raw[5])*(this.raw[2]*this.raw[11]-this.raw[10]*this.raw[3]) + (this.raw[8]*this.raw[13]-this.raw[12]*this.raw[9])*(this.raw[2]*this.raw[7]-this.raw[6]*this.raw[3]))
 }
-func (this *Matrix4x4) Position() Vector4 {
-	return Vector4{X: this.raw[12], Y: this.raw[13], Z: this.raw[14], W: 1.0}
+func (this *Matrix4x4) Position() *Vector4 {
+	return &Vector4{X: this.raw[12], Y: this.raw[13], Z: this.raw[14], W: 1.0}
 }
 func (this *Matrix4x4) GetRaw() [16]float32 {
 	raw := [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
