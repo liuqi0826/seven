@@ -86,14 +86,18 @@ func (this *Connection) Close() error {
 type WSConnction struct {
 	Alive      bool
 	ws         *websocket.Conn
+	writeBuff  chan []byte
 	errorCount int
 }
 
 func (this *WSConnction) WSConnction(ws *websocket.Conn) {
 	this.Alive = true
 	this.ws = ws
+	this.writeBuff = make(chan []byte, 32)
 	this.errorCount = 0
 	fmt.Println("Websocket connect from: " + fmt.Sprintf("%s", this.ws.RemoteAddr()))
+
+	go this.write()
 }
 func (this *WSConnction) Read(buf []byte) (int, error) {
 	var err error
@@ -124,14 +128,7 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
 	if this.Alive {
-		err = this.ws.WriteMessage(websocket.BinaryMessage, p)
-		if err != nil {
-			this.errorCount++
-			if this.errorCount >= 10 {
-				err = this.Close()
-			}
-			err = errors.New("Websocket write error")
-		}
+		this.writeBuff <- p
 	} else {
 		err = errors.New("Websocket connection closed")
 	}
@@ -145,6 +142,29 @@ func (this *WSConnction) Close() error {
 	err = this.ws.Close()
 	this.Alive = false
 	return err
+}
+func (this *WSConnction) write() {
+	for {
+		select {
+		case message, ok := <-this.writeBuff:
+			if ok {
+				w, err := this.ws.NextWriter(websocket.BinaryMessage)
+				if err == nil {
+					w.Write(message)
+				} else {
+					this.errorCount++
+					if this.errorCount >= 10 {
+						err = this.Close()
+					}
+					err = errors.New("Websocket write error")
+				}
+			} else {
+				this.ws.WriteMessage(websocket.CloseMessage, []byte{})
+				this.Alive = false
+				return
+			}
+		}
+	}
 }
 
 //==================== network ====================
