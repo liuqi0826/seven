@@ -6,10 +6,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/liuqi0826/seven/events"
-	"github.com/liuqi0826/seven/utils"
 	"io"
 	"time"
+
+	"github.com/liuqi0826/seven/events"
+	"github.com/liuqi0826/seven/utils"
 
 	"github.com/gorilla/websocket"
 )
@@ -97,7 +98,7 @@ func (this *WSConnction) WSConnction(ws *websocket.Conn) {
 	this.errorCount = 0
 	fmt.Println("Websocket connect from: " + fmt.Sprintf("%s", this.ws.RemoteAddr()))
 
-	go this.write()
+	go this.writeHandle()
 }
 func (this *WSConnction) Read(buf []byte) (int, error) {
 	var err error
@@ -139,19 +140,18 @@ func (this *WSConnction) Close() error {
 	if !this.Alive {
 		return nil
 	}
-	err = this.ws.Close()
 	this.Alive = false
+	err = this.ws.Close()
+	close(this.writeBuff)
 	return err
 }
-func (this *WSConnction) write() {
+func (this *WSConnction) writeHandle() {
 	for {
 		select {
 		case message, ok := <-this.writeBuff:
 			if ok {
-				w, err := this.ws.NextWriter(websocket.BinaryMessage)
-				if err == nil {
-					w.Write(message)
-				} else {
+				err := this.ws.WriteMessage(websocket.BinaryMessage, message)
+				if err != nil {
 					this.errorCount++
 					if this.errorCount >= 10 {
 						err = this.Close()
@@ -166,6 +166,8 @@ func (this *WSConnction) write() {
 		}
 	}
 }
+
+//==================== tcp socket ====================
 
 //==================== network ====================
 
@@ -226,6 +228,8 @@ func (this *Network) Send(data *DataStruct) {
 		this.Index += 1
 		data.SendIndex = this.Index
 		go this.write(data)
+	} else {
+		fmt.Println("network is nil")
 	}
 }
 func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)) {
