@@ -7,12 +7,13 @@ type Sphere struct {
 	Radius float32
 }
 
-func (this *Sphere) Sphere(center Vector4, radius float32) {
-	this.Center = center
+func (this *Sphere) Sphere(center *Vector4, radius float32) {
+	this.Center = center.Clone()
 	this.Radius = radius
 }
 func (this *Sphere) Clone() Sphere {
+	c := this.Center.Clone()
 	var s Sphere
-	s.Sphere(this.Center.Clone(), this.Radius)
+	s.Sphere(&c, this.Radius)
 	return s
 }
