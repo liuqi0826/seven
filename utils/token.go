@@ -10,43 +10,41 @@ import (
 	"time"
 )
 
-type Token struct {
-	account string
-	token   string
-}
-
 type TokenManager struct {
-	mutex     sync.Mutex
-	tokenDict map[string]Token
+	sync.Mutex
+
+	tokens map[string]string
 }
 
 func (this *TokenManager) TokenManager() {
-	this.mutex = sync.Mutex{}
-	this.tokenDict = make(map[string]Token)
+	this.tokens = make(map[string]string)
 }
-
-func (this *TokenManager) GetNewToken(account string) string {
+func (this *TokenManager) Create(id string) string {
 	rs := rand.New(rand.NewSource(time.Now().UnixNano()))
 	hash := md5.New()
 	_, err := io.WriteString(hash, strconv.FormatInt(rs.Int63(), 10))
 	if err == nil {
-		tkn := Token{}
-		tkn.account = account
-		tkn.token = fmt.Sprintf("%x", hash.Sum(nil))
-		this.mutex.Lock()
-		this.tokenDict[account] = tkn
-		this.mutex.Unlock()
-		return tkn.token
+		token := fmt.Sprintf("%x", hash.Sum(nil))
+		this.tokens[id] = token
+		return token
 	}
 	return ""
 }
-
-func (this *TokenManager) CheckToken(account string, tk string) bool {
-	if v, b := this.tokenDict[account]; b {
-		if v.token == tk {
-			this.mutex.Lock()
-			delete(this.tokenDict, account)
-			this.mutex.Unlock()
+func (this *TokenManager) Update(id string) string {
+	return this.Create(id)
+}
+func (this *TokenManager) Delete(id string) string {
+	if tk, ok := this.tokens[id]; ok {
+		this.Lock()
+		delete(this.tokens, id)
+		this.Unlock()
+		return tk
+	}
+	return ""
+}
+func (this *TokenManager) Check(id string, token string) bool {
+	if tk, ok := this.tokens[id]; ok {
+		if tk == token {
 			return true
 		}
 	}
