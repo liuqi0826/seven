@@ -249,6 +249,8 @@ func (this *Network) Close() error {
 	var err error
 	if this != nil && this.Alive {
 		this.Alive = false
+		this.Router.Dispose()
+		this.Router = nil
 		err = this.connect.Close()
 		evt := new(events.Event)
 		evt.Type = events.CLOSE

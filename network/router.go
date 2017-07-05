@@ -17,6 +17,11 @@ func (this *Route) Route() {
 	this.Table = make(map[uint16]func(*DataStruct))
 	this.Callback = make(map[uint16]func(*DataStruct))
 }
+func (this *Route) Dispose() {
+	this.Default = nil
+	this.Table = nil
+	this.Callback = nil
+}
 func (this *Route) setDefaultHandle(defun func(*DataStruct)) {
 	this.Default = defun
 }
