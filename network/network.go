@@ -206,14 +206,12 @@ func (this *Network) Create(conn io.ReadWriteCloser) {
 func (this *Network) SetHeartBeat(interval time.Duration) {
 	go func() {
 		for {
-			if this.Alive {
-				if this.connect != nil {
-					p := new(DataStruct)
-					p.Title = uint16(0)
-					p.Label = uint16(0)
-					this.Send(p)
-					time.Sleep(interval)
-				}
+			if this != nil && this.Alive && this.connect != nil {
+				p := new(DataStruct)
+				p.Title = uint16(0)
+				p.Label = uint16(0)
+				this.Send(p)
+				time.Sleep(interval)
 			} else {
 				break
 			}
