@@ -10,7 +10,7 @@ type Vector3 struct {
 	W float32
 }
 
-func (this *Vector4) Vector3() {
+func (this *Vector3) Vector3() {
 	this.X = 0.0
 	this.Y = 0.0
 	this.W = 1.0

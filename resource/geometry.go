@@ -13,9 +13,12 @@ type Geometry struct {
 
 	VertexIndex []uint16
 	ColorIndex  []uint16
-	Vertex      [8][]float32
+	Vertex      [][]float32
 }
 
 func (this *Geometry) Geometry() {
-
+	this.Bound = geom.Box{}
+	this.VertexIndex = make([]uint16, 0)
+	this.ColorIndex = make([]uint16, 0)
+	this.Vertex = make([][]float32, 0)
 }
