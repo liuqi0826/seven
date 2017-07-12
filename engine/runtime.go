@@ -3,11 +3,13 @@ package engine
 import (
 	"errors"
 	"fmt"
-	"github.com/gonutz/d3d9"
-	"github.com/liuqi0826/seven/events"
-	"github.com/veandco/go-sdl2/sdl"
 	"runtime"
 	"time"
+
+	"github.com/gonutz/d3d9"
+	"github.com/liuqi0826/seven/engine/display"
+	"github.com/liuqi0826/seven/events"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 const FPS30 = time.Duration(33333)
@@ -42,6 +44,8 @@ type Runtime struct {
 
 	Alive bool
 	Ready bool
+
+	ViewPort display.Viewport
 
 	config        *Config
 	instanceIndex int32
@@ -88,6 +92,8 @@ func (this *Runtime) Start() {
 		if this.config.FrameInterval == 0 {
 			this.config.FrameInterval = FPS60
 		}
+		this.ViewPort = display.Viewport{}
+		this.ViewPort.Viewport(int32(this.config.WindowWidth), int32(this.config.WindowHeight))
 		for this.Alive {
 			this.frame()
 		}
@@ -95,6 +101,12 @@ func (this *Runtime) Start() {
 }
 func (this *Runtime) Stop() {
 	this.Alive = false
+}
+func (this *Runtime) StageWidth() int32 {
+	return int32(this.config.WindowWidth)
+}
+func (this *Runtime) StageHeight() int32 {
+	return int32(this.config.WindowHeight)
 }
 func (this *Runtime) frame() {
 	bigin := time.Now().UnixNano()
