@@ -1,6 +1,10 @@
 package resource
 
-import (
+import ()
 
-)
+type TextureResource struct {
+}
 
+func (this *TextureResource) TextureResource() {
+
+}

@@ -1,13 +1,15 @@
 package display
 
 import (
+	"github.com/gonutz/d3d9"
 	"github.com/liuqi0826/seven/engine/display/core"
+	"github.com/liuqi0826/seven/engine/display/render"
 )
 
 type Viewport struct {
-	Camera *Camera
-	Scene  *Scene
-	Render core.IRender
+	Camera   *Camera
+	Scene    *Scene
+	Renderer core.IRenderer
 
 	Width  int32
 	Height int32
@@ -27,7 +29,16 @@ func (this *Viewport) Viewport(width int32, height int32) {
 
 	this.Scene = new(Scene)
 	this.Scene.Scene()
-}
-func (this *Viewport) Frame() {
 
+	this.Renderer = new(render.DefaultRenderer)
+}
+func (this *Viewport) Frame(context d3d9.Device) {
+	context.Clear(nil, d3d9.CLEAR_TARGET, 128, 1, 0)
+	context.BeginScene()
+
+	this.Camera.Update()
+	this.Renderer.Render()
+
+	context.EndScene()
+	context.Present(nil, nil, nil, nil)
 }

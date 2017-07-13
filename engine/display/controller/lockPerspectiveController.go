@@ -1,6 +1,10 @@
 package controller
 
-import (
+import ()
 
-)
+type LockPerspectiveController struct {
+}
 
+func (this *LockPerspectiveController) Update() {
+
+}

@@ -1,6 +1,10 @@
 package controller
 
-import (
+import ()
 
-)
+type HoverController struct {
+}
 
+func (this *HoverController) Update() {
+
+}

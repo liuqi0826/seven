@@ -1,6 +1,3 @@
 package resource
 
-import (
-
-)
-
+import ()

@@ -117,17 +117,14 @@ func (this *Runtime) frame() {
 		}
 	}
 	//render
-	this.context.Clear(nil, d3d9.CLEAR_TARGET, 255, 1, 0)
-	this.context.BeginScene()
-	this.context.EndScene()
-	this.context.Present(nil, nil, nil, nil)
+	this.ViewPort.Frame(this.context)
 
 	end := time.Now().UnixNano()
 	itv := time.Duration(end - bigin)
 	if itv < this.config.FrameInterval {
 		time.Sleep(time.Nanosecond * time.Duration(this.config.FrameInterval-itv))
 	}
-	fmt.Println(itv.Nanoseconds())
+//	fmt.Println(itv.Nanoseconds())
 }
 
 //++++++++++++++++++++ Config ++++++++++++++++++++

@@ -1,6 +1,10 @@
 package resource
 
-import (
+import ()
 
-)
+type ShaderResource struct {
+}
 
+func (this *ShaderResource) ShaderResource() {
+
+}

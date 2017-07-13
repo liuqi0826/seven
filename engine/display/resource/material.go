@@ -1,6 +1,10 @@
 package resource
 
-import (
+import ()
 
-)
+type MaterialResource struct {
+}
 
+func (this *MaterialResource) MaterialResource() {
+
+}

@@ -1,6 +1,10 @@
 package controller
 
-import (
+import ()
 
-)
+type FitstPersonController struct {
+}
 
+func (this *FitstPersonController) Update() {
+
+}

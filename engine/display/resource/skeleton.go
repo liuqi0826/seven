@@ -1,6 +1,0 @@
-package resource
-
-import (
-
-)
-

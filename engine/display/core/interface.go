@@ -8,9 +8,11 @@ type ICamera interface {
 }
 
 type IController interface {
+	Update()
 }
 
-type IRender interface {
+type IRenderer interface {
+	Render()
 }
 
 type IEntity interface {

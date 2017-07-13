@@ -4,6 +4,8 @@ import (
 	"math"
 
 	"github.com/liuqi0826/seven/engine/display/base"
+	"github.com/liuqi0826/seven/engine/display/core"
+	"github.com/liuqi0826/seven/engine/display/pick"
 	"github.com/liuqi0826/seven/geom"
 )
 
@@ -24,6 +26,9 @@ type ProjectionConfig struct {
 type Camera struct {
 	base.Object
 
+	Controller  core.IController
+	MousePicker pick.Picker
+
 	config *ProjectionConfig
 
 	host *Viewport
@@ -37,10 +42,11 @@ func (this *Camera) Camera(host *Viewport, config *ProjectionConfig) {
 	this.Object.Object()
 	this.host = host
 	this.config = config
+	this.MousePicker.Picker()
 	this.createProjectionMatrix()
 }
 func (this *Camera) Update() {
-
+	//	this.Controller.Update()
 }
 func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 	if up == nil {
