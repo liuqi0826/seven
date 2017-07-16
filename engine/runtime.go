@@ -47,6 +47,8 @@ type Runtime struct {
 
 	ViewPort display.Viewport
 
+	Resource ResourceManager
+
 	config        *Config
 	instanceIndex int32
 	window        *sdl.Window
@@ -55,6 +57,7 @@ type Runtime struct {
 
 func (this *Runtime) Runtime() {
 	this.instanceIndex = -1
+	this.Resource = ResourceManager{}
 }
 func (this *Runtime) Setup(config *Config) error {
 	var err error
@@ -94,9 +97,9 @@ func (this *Runtime) Start() {
 		}
 		this.ViewPort = display.Viewport{}
 		this.ViewPort.Viewport(int32(this.config.WindowWidth), int32(this.config.WindowHeight))
-		for this.Alive {
-			this.frame()
-		}
+	}
+	for this.Alive {
+		this.frame()
 	}
 }
 func (this *Runtime) Stop() {
@@ -124,7 +127,7 @@ func (this *Runtime) frame() {
 	if itv < this.config.FrameInterval {
 		time.Sleep(time.Nanosecond * time.Duration(this.config.FrameInterval-itv))
 	}
-//	fmt.Println(itv.Nanoseconds())
+	//	fmt.Println(itv.Nanoseconds())
 }
 
 //++++++++++++++++++++ Config ++++++++++++++++++++

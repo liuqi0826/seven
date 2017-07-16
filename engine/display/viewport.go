@@ -33,7 +33,7 @@ func (this *Viewport) Viewport(width int32, height int32) {
 	this.Renderer = new(render.DefaultRenderer)
 }
 func (this *Viewport) Frame(context d3d9.Device) {
-	context.Clear(nil, d3d9.CLEAR_TARGET, 128, 1, 0)
+	context.Clear(nil, d3d9.CLEAR_TARGET, 0x000000, 1, 0)
 	context.BeginScene()
 
 	this.Camera.Update()
