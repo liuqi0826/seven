@@ -30,6 +30,7 @@ func (this *ResourceManager) ResourceManager() {
 	this.materialRuntime = make(map[string]*base.Material)
 	this.shaderRuntime = make(map[string]*base.ShaderProgram)
 }
+
 func (this *ResourceManager) ParserGeometrie(value []byte) string {
 	gr := new(resource.GeometryResource)
 	err := json.Unmarshal(value, gr)
@@ -48,9 +49,14 @@ func (this *ResourceManager) ParserAnimation(value []byte) string {
 func (this *ResourceManager) ParserShader(value []byte) string {
 	return ""
 }
+
 func (this *ResourceManager) AddGeometrie(value *resource.GeometryResource) {
+	this.geometryResource[value.ID] = value
 }
 func (this *ResourceManager) GetGeometrie(id string) *resource.GeometryResource {
+	if gr, ok := this.geometryResource[id]; ok {
+		return gr
+	}
 	return nil
 }
 func (this *ResourceManager) AddMaterial(value *resource.MaterialResource) {
@@ -58,13 +64,31 @@ func (this *ResourceManager) AddMaterial(value *resource.MaterialResource) {
 func (this *ResourceManager) GetMaterial(id string) *resource.MaterialResource {
 	return nil
 }
-
-//func (this *ResourceManager) AddAnimation(value *resource.MaterialResource) {
-//}
-//func (this *ResourceManager) GetAnimation(id string) *resource.MaterialResource {
-//}
+func (this *ResourceManager) AddAnimation(value *resource.AnimationResource) {
+}
+func (this *ResourceManager) GetAnimation(id string) *resource.AnimationResource {
+	return nil
+}
 func (this *ResourceManager) AddShader(value *resource.ShaderResource) {
 }
 func (this *ResourceManager) GetShader(id string) *resource.ShaderResource {
+	return nil
+}
+
+func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
+	gr := this.GetGeometrie(id)
+	if gr != nil {
+		sg := new(base.SubGeometry)
+		sg.SubGeometry(gr)
+		if !sg.Uploaded {
+			sg.Upload(Instance.context)
+		}
+	}
+	return nil
+}
+func (this *ResourceManager) CreateMaterial(id string) *base.Material {
+	return nil
+}
+func (this *ResourceManager) CreateShaderProgram(id string) *base.ShaderProgram {
 	return nil
 }

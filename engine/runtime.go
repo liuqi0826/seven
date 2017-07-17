@@ -53,11 +53,15 @@ type Runtime struct {
 	instanceIndex int32
 	window        *sdl.Window
 	context       d3d9.Device
+
+	action func()
+	render func()
 }
 
 func (this *Runtime) Runtime() {
 	this.instanceIndex = -1
 	this.Resource = ResourceManager{}
+	this.Resource.ResourceManager()
 }
 func (this *Runtime) Setup(config *Config) error {
 	var err error
@@ -97,9 +101,15 @@ func (this *Runtime) Start() {
 		}
 		this.ViewPort = display.Viewport{}
 		this.ViewPort.Viewport(int32(this.config.WindowWidth), int32(this.config.WindowHeight))
-	}
-	for this.Alive {
-		this.frame()
+		if this.action == nil {
+			this.action = this.defaultAction
+		}
+		if this.render == nil {
+			this.render = this.defaultRender
+		}
+		for this.Alive {
+			this.frame()
+		}
 	}
 }
 func (this *Runtime) Stop() {
@@ -111,6 +121,17 @@ func (this *Runtime) StageWidth() int32 {
 func (this *Runtime) StageHeight() int32 {
 	return int32(this.config.WindowHeight)
 }
+func (this *Runtime) SetAction(action func()) {
+	this.action = action
+}
+func (this *Runtime) SetRender(render func()) {
+	this.render = render
+}
+func (this *Runtime) defaultAction() {
+}
+func (this *Runtime) defaultRender() {
+	this.ViewPort.Frame(this.context)
+}
 func (this *Runtime) frame() {
 	bigin := time.Now().UnixNano()
 	for e := sdl.PollEvent(); e != nil; e = sdl.PollEvent() {
@@ -119,15 +140,23 @@ func (this *Runtime) frame() {
 			this.Alive = false
 		}
 	}
+
+	//action
+	if this.action != nil {
+		this.action()
+	}
+
 	//render
-	this.ViewPort.Frame(this.context)
+	if this.render != nil {
+		this.render()
+	}
 
 	end := time.Now().UnixNano()
 	itv := time.Duration(end - bigin)
 	if itv < this.config.FrameInterval {
 		time.Sleep(time.Nanosecond * time.Duration(this.config.FrameInterval-itv))
 	}
-	//	fmt.Println(itv.Nanoseconds())
+	//fmt.Println(itv.Nanoseconds())
 }
 
 //++++++++++++++++++++ Config ++++++++++++++++++++
