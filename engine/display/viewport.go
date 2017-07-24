@@ -1,7 +1,7 @@
 package display
 
 import (
-	"github.com/gonutz/d3d9"
+	"github.com/liuqi0826/seven/api/khronos/es3/gl"
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/render"
 )
@@ -32,13 +32,9 @@ func (this *Viewport) Viewport(width int32, height int32) {
 
 	this.Renderer = new(render.DefaultRenderer)
 }
-func (this *Viewport) Frame(context d3d9.Device) {
-	context.Clear(nil, d3d9.CLEAR_TARGET, 0x000000, 1, 0)
-	context.BeginScene()
+func (this *Viewport) Frame() {
+	gl.Clear(0)
 
 	this.Camera.Update()
 	this.Renderer.Render()
-
-	context.EndScene()
-	context.Present(nil, nil, nil, nil)
 }

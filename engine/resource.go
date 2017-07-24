@@ -81,7 +81,7 @@ func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
 		sg := new(base.SubGeometry)
 		sg.SubGeometry(gr)
 		if !sg.Uploaded {
-			sg.Upload(Instance.context)
+			sg.Upload()
 		}
 	}
 	return nil
