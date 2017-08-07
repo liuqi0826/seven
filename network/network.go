@@ -315,7 +315,11 @@ func (this *Network) read() {
 							receIndexBuffer := bytes.NewBuffer(this.buffer[6:8])
 							err = binary.Read(receIndexBuffer, binary.BigEndian, &recvData.ReceIndex)
 							utils.ErrorHandle("Read rece index", err)
-							recvData.Data = this.buffer[8:this.bufferLen]
+							
+							if this.bufferLen > 8 {
+								recvData.Data = this.buffer[8:this.bufferLen]
+							}
+							
 							this.buffer = this.buffer[this.bufferLen:len(this.buffer)]
 							this.Router.onData(recvData)
 						} else {
