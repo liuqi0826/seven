@@ -221,14 +221,16 @@ func (this *Network) SetHeartBeat(interval time.Duration) {
 func (this *Network) GetConnectType() string {
 	return this.connectType
 }
-func (this *Network) Send(data *DataStruct) {
+func (this *Network) Send(data *DataStruct) error {
+	var err error
 	if this != nil {
 		this.Index += 1
 		data.SendIndex = this.Index
 		go this.write(data)
 	} else {
-		fmt.Println("network is nil")
+		err = errors.New("Connect lost!")
 	}
+	return err
 }
 func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)) {
 	this.Index += 1
@@ -294,7 +296,7 @@ func (this *Network) write(data *DataStruct) {
 func (this *Network) read() {
 	for {
 		if this.Alive {
-			buf := make([]byte, 256)
+			buf := make([]byte, 1024)
 			length, err := this.reader.Read(buf)
 			if err == nil {
 				this.buffer = append(this.buffer, buf[:length]...)
@@ -315,11 +317,11 @@ func (this *Network) read() {
 							receIndexBuffer := bytes.NewBuffer(this.buffer[6:8])
 							err = binary.Read(receIndexBuffer, binary.BigEndian, &recvData.ReceIndex)
 							utils.ErrorHandle("Read rece index", err)
-							
+
 							if this.bufferLen > 8 {
 								recvData.Data = this.buffer[8:this.bufferLen]
 							}
-							
+
 							this.buffer = this.buffer[this.bufferLen:len(this.buffer)]
 							this.Router.onData(recvData)
 						} else {
