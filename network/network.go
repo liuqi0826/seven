@@ -139,6 +139,7 @@ func (this *WSConnction) Write(p []byte) (int, error) {
 	return 0, err
 }
 func (this *WSConnction) Close() error {
+	fmt.Println("ws close")
 	var err error
 	if !this.Alive {
 		return nil
