@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/liuqi0826/seven/events"
@@ -85,6 +86,8 @@ func (this *Connection) Close() error {
 //==================== websocket ====================
 
 type WSConnction struct {
+	sync.Mutex
+
 	Alive      bool
 	ws         *websocket.Conn
 	writeBuff  chan []byte
@@ -128,7 +131,7 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 }
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
-	if this.Alive {
+	if this.Alive && this.writeBuff != nil {
 		this.writeBuff <- p
 	} else {
 		err = errors.New("Websocket connection closed")
@@ -140,9 +143,11 @@ func (this *WSConnction) Close() error {
 	if !this.Alive {
 		return nil
 	}
+	this.Lock()
 	this.Alive = false
 	err = this.ws.Close()
 	close(this.writeBuff)
+	this.Unlock()
 	return err
 }
 func (this *WSConnction) writeHandle() {
