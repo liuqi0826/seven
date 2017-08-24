@@ -98,7 +98,7 @@ func (this *WSConnction) WSConnction(ws *websocket.Conn) {
 	this.errorCount = 0
 	fmt.Println("Websocket connect from: " + fmt.Sprintf("%s", this.ws.RemoteAddr()))
 
-	//go this.writeHandle()
+	go this.writeHandle()
 }
 func (this *WSConnction) Read(buf []byte) (int, error) {
 	var err error
@@ -128,7 +128,6 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 }
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
-	fmt.Println(this.Alive)
 	if this.Alive && this.writeBuff != nil {
 		this.writeBuff <- p
 	} else {
