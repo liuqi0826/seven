@@ -128,19 +128,12 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 }
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
-	err = this.ws.WriteMessage(websocket.BinaryMessage, p)
-	if err != nil {
-		this.errorCount++
-		if this.errorCount >= 10 {
-			err = this.Close()
-		}
-		err = errors.New("Websocket write error")
+	fmt.Println(this.Alive)
+	if this.Alive && this.writeBuff != nil {
+		this.writeBuff <- p
+	} else {
+		err = errors.New("Websocket connection closed")
 	}
-	//if this.Alive && this.writeBuff != nil {
-	//	this.writeBuff <- p
-	//} else {
-	//	err = errors.New("Websocket connection closed")
-	//}
 	return 0, err
 }
 func (this *WSConnction) Close() error {
