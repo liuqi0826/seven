@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/liuqi0826/seven/events"
@@ -86,8 +85,6 @@ func (this *Connection) Close() error {
 //==================== websocket ====================
 
 type WSConnction struct {
-	sync.Mutex
-
 	Alive      bool
 	ws         *websocket.Conn
 	writeBuff  chan []byte
@@ -101,7 +98,7 @@ func (this *WSConnction) WSConnction(ws *websocket.Conn) {
 	this.errorCount = 0
 	fmt.Println("Websocket connect from: " + fmt.Sprintf("%s", this.ws.RemoteAddr()))
 
-	go this.writeHandle()
+	//go this.writeHandle()
 }
 func (this *WSConnction) Read(buf []byte) (int, error) {
 	var err error
@@ -131,24 +128,29 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 }
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
-	if this.Alive && this.writeBuff != nil {
-		this.writeBuff <- p
-	} else {
-		err = errors.New("Websocket connection closed")
+	err = this.ws.WriteMessage(websocket.BinaryMessage, p)
+	if err != nil {
+		this.errorCount++
+		if this.errorCount >= 10 {
+			err = this.Close()
+		}
+		err = errors.New("Websocket write error")
 	}
+	//if this.Alive && this.writeBuff != nil {
+	//	this.writeBuff <- p
+	//} else {
+	//	err = errors.New("Websocket connection closed")
+	//}
 	return 0, err
 }
 func (this *WSConnction) Close() error {
-	fmt.Println("ws close")
 	var err error
 	if !this.Alive {
 		return nil
 	}
-	this.Lock()
 	this.Alive = false
 	err = this.ws.Close()
 	close(this.writeBuff)
-	this.Unlock()
 	return err
 }
 func (this *WSConnction) writeHandle() {
