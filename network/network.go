@@ -72,7 +72,7 @@ func (this *Connection) Write(p []byte) (int, error) {
 	if this.alive {
 		this.Channel <- p
 		if this.closing {
-			close(this.Channel)
+//			close(this.Channel)
 			this.closing = false
 		}
 	} else {
@@ -140,7 +140,7 @@ func (this *WSConnction) Write(p []byte) (int, error) {
 	if this.alive && this.writeBuff != nil {
 		this.writeBuff <- p
 		if this.closing {
-			close(this.writeBuff)
+//			close(this.writeBuff)
 			this.closing = false
 		}
 	} else {
