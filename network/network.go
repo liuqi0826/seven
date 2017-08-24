@@ -33,13 +33,16 @@ type DataStruct struct {
 //==================== local ====================
 
 type Connection struct {
-	Alive       bool
 	Channel     chan []byte
 	BindingConn *Connection
+
+	alive   bool
+	closing bool
 }
 
 func (this *Connection) Connection() {
-	this.Alive = true
+	this.alive = true
+	this.closing = false
 	this.Channel = make(chan []byte, 10)
 }
 func (this *Connection) Read(buf []byte) (int, error) {
@@ -66,33 +69,39 @@ func (this *Connection) Read(buf []byte) (int, error) {
 }
 func (this *Connection) Write(p []byte) (int, error) {
 	var err error
-	if this.Alive {
+	if this.alive {
 		this.Channel <- p
+		if this.closing {
+			close(this.Channel)
+			this.closing = false
+		}
 	} else {
 		err = errors.New("Connection channel closed")
 	}
 	return len(p), err
 }
 func (this *Connection) Close() error {
-	if !this.Alive {
+	if !this.alive {
 		return nil
 	}
-	this.Alive = false
-	close(this.Channel)
+	this.alive = false
+	this.closing = true
 	return nil
 }
 
 //==================== websocket ====================
 
 type WSConnction struct {
-	Alive      bool
+	alive      bool
+	closing    bool
 	ws         *websocket.Conn
 	writeBuff  chan []byte
 	errorCount int
 }
 
 func (this *WSConnction) WSConnction(ws *websocket.Conn) {
-	this.Alive = true
+	this.alive = true
+	this.closing = false
 	this.ws = ws
 	this.writeBuff = make(chan []byte, 32)
 	this.errorCount = 0
@@ -102,7 +111,7 @@ func (this *WSConnction) WSConnction(ws *websocket.Conn) {
 }
 func (this *WSConnction) Read(buf []byte) (int, error) {
 	var err error
-	if this.Alive {
+	if this.alive {
 		mt, msg, err := this.ws.ReadMessage()
 		if err == nil {
 			switch mt {
@@ -128,8 +137,12 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 }
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
-	if this.Alive && this.writeBuff != nil {
+	if this.alive && this.writeBuff != nil {
 		this.writeBuff <- p
+		if this.closing {
+			close(this.writeBuff)
+			this.closing = false
+		}
 	} else {
 		err = errors.New("Websocket connection closed")
 	}
@@ -137,12 +150,12 @@ func (this *WSConnction) Write(p []byte) (int, error) {
 }
 func (this *WSConnction) Close() error {
 	var err error
-	if !this.Alive {
+	if !this.alive {
 		return nil
 	}
-	this.Alive = false
+	this.alive = false
+	this.closing = true
 	err = this.ws.Close()
-	close(this.writeBuff)
 	return err
 }
 func (this *WSConnction) writeHandle() {
@@ -160,7 +173,7 @@ func (this *WSConnction) writeHandle() {
 				}
 			} else {
 				this.ws.WriteMessage(websocket.CloseMessage, []byte{})
-				this.Alive = false
+				this.alive = false
 				return
 			}
 		}
@@ -174,11 +187,13 @@ func (this *WSConnction) writeHandle() {
 type Network struct {
 	Buffer
 	events.EventDispatcher
-	Alive       bool
-	Index       uint16
-	CreateTime  int64
-	Deadline    int64
-	Router      *Route
+
+	Index      uint16
+	CreateTime int64
+	Deadline   int64
+	Router     *Route
+
+	alive       bool
 	connectType string
 	connect     io.ReadWriteCloser
 	markTime    int64
@@ -193,7 +208,7 @@ func (this *Network) Network() {
 	this.Deadline = 60
 }
 func (this *Network) Create(conn io.ReadWriteCloser) {
-	this.Alive = true
+	this.alive = true
 	this.Index = 0
 	this.connect = conn
 	this.reader = bufio.NewReader(this.connect)
@@ -206,7 +221,7 @@ func (this *Network) Create(conn io.ReadWriteCloser) {
 func (this *Network) SetHeartBeat(interval time.Duration) {
 	go func() {
 		for {
-			if this != nil && this.Alive && this.connect != nil {
+			if this != nil && this.alive && this.connect != nil {
 				p := new(DataStruct)
 				p.Title = uint16(0)
 				p.Label = uint16(0)
@@ -249,8 +264,8 @@ func (this *Network) RemoveHandle(title uint16) error {
 }
 func (this *Network) Close() error {
 	var err error
-	if this != nil && this.Alive {
-		this.Alive = false
+	if this != nil && this.alive {
+		this.alive = false
 		this.Router.Dispose()
 		this.Router = nil
 		err = this.connect.Close()
@@ -269,7 +284,7 @@ func (this *Network) pong(message *DataStruct) {
 	if this.markTime == 0 {
 		go func() {
 			for {
-				if this.Alive {
+				if this.alive {
 					if time.Now().Unix()-this.markTime > this.Deadline {
 						this.Close()
 					}
@@ -295,7 +310,7 @@ func (this *Network) write(data *DataStruct) {
 }
 func (this *Network) read() {
 	for {
-		if this.Alive {
+		if this.alive {
 			buf := make([]byte, 1024)
 			length, err := this.reader.Read(buf)
 			if err == nil {
