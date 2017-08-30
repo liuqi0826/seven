@@ -132,7 +132,12 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
 	if this != nil && this.alive {
-		this.writeBuf <- p
+		if len(this.writeBuf) < cap(this.writeBuf) {
+			this.writeBuf <- p
+		} else {
+			err = errors.New("Websocket chan is full.")
+			return 0, err
+		}
 	} else {
 		err = errors.New("Websocket connection closed.")
 		return 0, err
