@@ -67,7 +67,12 @@ func (this *ChanConnection) Read(buf []byte) (int, error) {
 func (this *ChanConnection) Write(msg []byte) (int, error) {
 	var err error
 	if this != nil && this.alive {
-		this.channel <- msg
+		if len(this.channel) < cap(this.channel) {
+			this.channel <- msg
+		} else {
+			err = errors.New("ChanConnection connect is full.")
+			return 0, err
+		}
 	} else {
 		err = errors.New("ChanConnection channel closed")
 		return 0, err
@@ -135,7 +140,7 @@ func (this *WSConnction) Write(p []byte) (int, error) {
 		if len(this.writeBuf) < cap(this.writeBuf) {
 			this.writeBuf <- p
 		} else {
-			err = errors.New("Websocket chan is full.")
+			err = errors.New("Websocket connect is full.")
 			return 0, err
 		}
 	} else {
@@ -229,13 +234,18 @@ func (this *TCPConnection) Read(buf []byte) (int, error) {
 func (this *TCPConnection) Write(msg []byte) (int, error) {
 	var err error
 	if this != nil && this.alive {
-		length := uint32(len(msg))
-		stream := bytes.NewBuffer([]byte{})
-		binary.Write(stream, binary.BigEndian, length)
-		binary.Write(stream, binary.BigEndian, msg)
-		this.writeBuf <- stream.Bytes()
+		if len(this.writeBuf) < cap(this.writeBuf) {
+			length := uint32(len(msg))
+			stream := bytes.NewBuffer([]byte{})
+			binary.Write(stream, binary.BigEndian, length)
+			binary.Write(stream, binary.BigEndian, msg)
+			this.writeBuf <- stream.Bytes()
+		} else {
+			err = errors.New("TCPsocket connect is full.")
+			return 0, err
+		}
 	} else {
-		err = errors.New("TCPsocket connection closed.")
+		err = errors.New("TCPsocket connect closed.")
 		return 0, err
 	}
 	return len(msg), err
