@@ -1,27 +1,21 @@
 package network
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/liuqi0826/seven/events"
 	"github.com/liuqi0826/seven/utils"
-
-	"github.com/gorilla/websocket"
 )
 
-type Buffer struct {
-	headRead  bool
-	bufferLen int32
-	buffer    []byte
-	reader    io.Reader
-}
+const MAX_NETWORK_PACKAGE_LENGTH = 2048
 
 type DataStruct struct {
 	Title     uint16
@@ -33,63 +27,66 @@ type DataStruct struct {
 
 //==================== local ====================
 
-type Connection struct {
+type ChanConnection struct {
 	sync.Mutex
 
-	Channel     chan []byte
-	BindingConn *Connection
-
-	alive bool
+	alive   bool
+	channel chan []byte
+	binding *ChanConnection
 }
 
-func (this *Connection) Connection() {
+func (this *ChanConnection) ChanConnection(connect *ChanConnection) {
 	this.alive = true
-	this.Channel = make(chan []byte, 10)
-}
-func (this *Connection) Read(buf []byte) (int, error) {
-	var err error
-	if this.BindingConn == nil {
-		for {
-			time.Sleep(time.Millisecond * 100)
-			if this.BindingConn != nil {
-				break
-			}
-		}
+	this.channel = make(chan []byte, 32)
+	if connect != nil {
+		this.binding = connect
+		connect.binding = this
 	}
-	if msg, ok := <-this.BindingConn.Channel; ok {
-		length := len(msg)
-		stream := bytes.NewBuffer([]byte{})
-		binary.Write(stream, binary.BigEndian, length)
-		binary.Write(stream, binary.BigEndian, msg)
-		copy(buf, stream.Bytes())
-		return length, err
+}
+func (this *ChanConnection) Read(buf []byte) (int, error) {
+	var err error
+	if this != nil && this.alive {
+		for this.binding == nil {
+			time.Sleep(time.Millisecond * 100)
+		}
+		if msg, ok := <-this.binding.channel; ok {
+			length := len(msg)
+			stream := bytes.NewBuffer([]byte{})
+			binary.Write(stream, binary.BigEndian, length)
+			binary.Write(stream, binary.BigEndian, msg)
+			copy(buf, stream.Bytes())
+			return length, err
+		} else {
+			err = errors.New("Bingding connect channel closed")
+		}
 	} else {
-		err = errors.New("Bingding connect channel closed")
+		err = errors.New("ChanConnection closed")
 	}
 	return 0, err
 }
-func (this *Connection) Write(p []byte) (int, error) {
+func (this *ChanConnection) Write(msg []byte) (int, error) {
 	var err error
-	this.Lock()
-	defer this.Unlock()
-	if this.alive {
-		this.Channel <- p
+	if this != nil && this.alive {
+		this.channel <- msg
 	} else {
-		err = errors.New("Connection channel closed")
+		err = errors.New("ChanConnection channel closed")
+		return 0, err
 	}
-	return len(p), err
+	return len(msg), err
 }
-func (this *Connection) Close() error {
+func (this *ChanConnection) Close() error {
 	var err error
-	if !this.alive {
-		err = errors.New("Connection channel closed")
+	if this != nil && this.alive {
+		this.Lock()
+		defer this.Unlock()
+		this.alive = false
+		this.binding = nil
+		close(this.channel)
+	} else {
+		err = errors.New("ChanConnection channel closed")
 		return err
 	}
-	this.Lock()
-	defer this.Unlock()
-	this.alive = false
-	close(this.Channel)
-	return nil
+	return err
 }
 
 //==================== websocket ====================
@@ -97,32 +94,32 @@ func (this *Connection) Close() error {
 type WSConnction struct {
 	sync.Mutex
 
-	alive     bool
-	ws        *websocket.Conn
-	writeBuff chan []byte
+	alive    bool
+	connect  *websocket.Conn
+	readBuf  chan []byte
+	writeBuf chan []byte
 }
 
-func (this *WSConnction) WSConnction(ws *websocket.Conn) {
+func (this *WSConnction) WSConnction(connect *websocket.Conn) {
 	this.alive = true
-	this.ws = ws
-	this.writeBuff = make(chan []byte, 32)
-	fmt.Println("Websocket connect from: " + fmt.Sprintf("%s", this.ws.RemoteAddr()))
+	this.connect = connect
+	this.readBuf = make(chan []byte, 32)
+	this.writeBuf = make(chan []byte, 32)
+	fmt.Println("Websocket connect from: " + fmt.Sprintf("%s", this.connect.RemoteAddr()))
 
-	go this.writeHandle()
+	go this.readListen()
+	go this.writeListen()
 }
 func (this *WSConnction) Read(buf []byte) (int, error) {
 	var err error
-	if this.alive {
-		mt, msg, err := this.ws.ReadMessage()
-		if err == nil {
-			switch mt {
-			default:
-				length := len(msg)
-				if len(buf) < length {
-					buf = make([]byte, length)
-				}
+	if this != nil && this.alive {
+		if msg, ok := <-this.readBuf; ok {
+			length := len(msg)
+			if length <= MAX_NETWORK_PACKAGE_LENGTH {
 				copy(buf, msg)
 				return length, err
+			} else {
+				err = errors.New("Data package length is out of range.")
 			}
 		} else {
 			err = this.Close()
@@ -134,134 +131,300 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 }
 func (this *WSConnction) Write(p []byte) (int, error) {
 	var err error
-	this.Lock()
-	defer this.Unlock()
-	if this.alive {
-		this.writeBuff <- p
+	if this != nil && this.alive {
+		this.writeBuf <- p
 	} else {
 		err = errors.New("Websocket connection closed.")
+		return 0, err
 	}
 	return len(p), err
 }
 func (this *WSConnction) Close() error {
 	var err error
-	if !this.alive {
+	if this != nil && this.alive {
+		this.Lock()
+		defer this.Unlock()
+		this.alive = false
+		close(this.readBuf)
+		close(this.writeBuf)
+		fmt.Println("Websocket close: " + fmt.Sprintf("%s", this.connect.RemoteAddr()))
+		err = this.connect.Close()
+	} else {
 		err = errors.New("Websocket has been closed.")
-		return err
 	}
-	this.Lock()
-	defer this.Unlock()
-	this.alive = false
-	close(this.writeBuff)
-	err = this.ws.Close()
 	return err
 }
-func (this *WSConnction) writeHandle() {
-	for {
-		select {
-		case message, ok := <-this.writeBuff:
-			if ok {
-				err := this.ws.WriteMessage(websocket.BinaryMessage, message)
-				if err != nil {
-					this.Close()
-				}
-			} else {
+func (this *WSConnction) readListen() {
+	for this != nil && this.alive {
+		_, msg, err := this.connect.ReadMessage()
+		if err == nil {
+			this.readBuf <- msg
+		} else {
+			err = this.Close()
+		}
+	}
+}
+func (this *WSConnction) writeListen() {
+	for this != nil && this.alive {
+		if message, ok := <-this.writeBuf; ok {
+			err := this.connect.WriteMessage(websocket.BinaryMessage, message)
+			if err != nil {
 				this.Close()
-				return
 			}
+		} else {
+			this.Close()
 		}
 	}
 }
 
 //==================== tcp socket ====================
 
+type TCPConnection struct {
+	sync.Mutex
+
+	alive      bool
+	headRead   bool
+	packageLen uint32
+	buffer     []byte
+	connect    net.TCPConn
+	readBuf    chan []byte
+	writeBuf   chan []byte
+}
+
+func (this *TCPConnection) TCPConnection(connect net.TCPConn) {
+	this.alive = true
+	this.buffer = make([]byte, 2048)
+	this.connect = connect
+	this.readBuf = make(chan []byte, 32)
+	this.writeBuf = make(chan []byte, 32)
+	fmt.Println("TCP connect from: " + fmt.Sprintf("%s", this.connect.RemoteAddr()))
+
+	go this.readListen()
+	go this.writeListen()
+}
+func (this *TCPConnection) Read(buf []byte) (int, error) {
+	var err error
+	if this != nil && this.alive {
+		if msg, ok := <-this.readBuf; ok {
+			length := len(msg)
+			if length <= MAX_NETWORK_PACKAGE_LENGTH {
+				copy(buf, msg)
+				return length, err
+			} else {
+				err = errors.New("Data package length is out of range.")
+			}
+		} else {
+			err = errors.New("TCP read chan closed")
+		}
+	} else {
+		err = errors.New("TCP connect closed")
+	}
+	return 0, err
+}
+func (this *TCPConnection) Write(msg []byte) (int, error) {
+	var err error
+	if this != nil && this.alive {
+		length := uint32(len(msg))
+		stream := bytes.NewBuffer([]byte{})
+		binary.Write(stream, binary.BigEndian, length)
+		binary.Write(stream, binary.BigEndian, msg)
+		this.writeBuf <- stream.Bytes()
+	} else {
+		err = errors.New("TCPsocket connection closed.")
+		return 0, err
+	}
+	return len(msg), err
+}
+func (this *TCPConnection) Close() error {
+	var err error
+	this.Lock()
+	defer this.Unlock()
+	this.alive = false
+	close(this.readBuf)
+	close(this.writeBuf)
+	fmt.Println("TCP close: " + fmt.Sprintf("%s", this.connect.RemoteAddr()))
+	err = this.connect.Close()
+	return err
+}
+func (this *TCPConnection) readListen() {
+	for this != nil && this.alive {
+		buffer := make([]byte, 2048)
+		length, err := this.connect.Read(buffer)
+		if err == nil {
+			this.Lock()
+			defer this.Unlock()
+			this.buffer = append(this.buffer, buffer[:length]...)
+			if this.headRead {
+				if len(this.buffer) >= int(this.packageLen) {
+					this.headRead = false
+					data := this.buffer[:this.packageLen]
+					this.buffer = this.buffer[this.packageLen:len(this.buffer)]
+					this.writeBuf <- data
+				} else {
+					break
+				}
+			} else {
+				if len(this.buffer) >= 4 {
+					lenBuffer := bytes.NewBuffer(this.buffer[0:4])
+					err = binary.Read(lenBuffer, binary.BigEndian, &this.packageLen)
+					utils.ErrorHandle("Read len", err)
+					this.headRead = true
+					this.buffer = this.buffer[4:len(this.buffer)]
+				}
+			}
+		} else {
+			this.Close()
+		}
+	}
+}
+func (this *TCPConnection) writeListen() {
+	for this != nil && this.alive {
+		if msg, ok := <-this.writeBuf; ok {
+			go this.connect.Write(msg)
+		} else {
+			this.Close()
+		}
+	}
+}
+
+//==================== udp socket ====================
+
 //==================== network ====================
 
 type Network struct {
-	Buffer
+	sync.Mutex
 	events.EventDispatcher
 
-	Index      uint16
-	CreateTime int64
-	Deadline   int64
-	Router     *Route
-
 	alive       bool
+	index       uint16
 	connectType string
-	connect     io.ReadWriteCloser
+	createTime  int64
+	deadline    int64
 	markTime    int64
-	errorCount  int
+
+	router  *Route
+	connect io.ReadWriteCloser
 }
 
 func (this *Network) Network() {
+	this.router = new(Route)
+	this.router.Route()
+	this.router.addHandle(uint16(0), this.pong)
 	this.EventDispatcher.EventDispatcher()
-	this.Router = new(Route)
-	this.Router.Route()
-	this.Router.addHandle(uint16(0), this.pong)
-	this.Deadline = 60
+	this.deadline = 60
 }
 func (this *Network) Create(conn io.ReadWriteCloser) {
 	this.alive = true
-	this.Index = 0
 	this.connect = conn
-	this.reader = bufio.NewReader(this.connect)
-	this.CreateTime = time.Now().Unix()
-	this.listen()
+	this.index = 0
+	this.createTime = time.Now().Unix()
+
+	go this.listen()
+
 	evt := new(events.Event)
 	evt.Type = events.CONNECT
 	this.DispatchEvent(evt)
 }
-func (this *Network) SetHeartBeat(interval time.Duration) {
-	go func() {
-		for {
-			if this != nil && this.alive && this.connect != nil {
-				p := new(DataStruct)
-				p.Title = uint16(0)
-				p.Label = uint16(0)
-				this.Send(p)
-				time.Sleep(interval)
-			} else {
-				break
-			}
-		}
-	}()
+func (this *Network) GetIndex() uint16 {
+	if this != nil && this.alive && this.connect != nil {
+		return this.index
+	}
+	return 0
+}
+func (this *Network) GetCreateTime() int64 {
+	if this != nil && this.alive && this.connect != nil {
+		return this.createTime
+	}
+	return 0
 }
 func (this *Network) GetConnectType() string {
-	return this.connectType
+	if this != nil && this.alive && this.connect != nil {
+		return this.connectType
+	}
+	return ""
 }
-func (this *Network) Send(data *DataStruct) error {
+func (this *Network) SetHeartBeat(interval time.Duration) error {
 	var err error
-	if this != nil {
-		this.Index += 1
-		data.SendIndex = this.Index
-		go this.write(data)
+	if this != nil && this.alive && this.connect != nil {
+		go func() {
+			for {
+				if this != nil && this.alive && this.connect != nil {
+					p := new(DataStruct)
+					p.Title = uint16(0)
+					p.Label = uint16(0)
+					this.Send(p)
+					time.Sleep(interval)
+				} else {
+					break
+				}
+			}
+		}()
 	} else {
-		err = errors.New("Connect lost!")
+		err = errors.New("Network is closed!")
 	}
 	return err
 }
-func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)) {
-	this.Index += 1
-	data.SendIndex = this.Index
-	this.Router.addCallback(this.Index, handle)
-	go this.write(data)
+func (this *Network) Send(data *DataStruct) error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		this.index += 1
+		data.SendIndex = this.index
+		go this.flush(data)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
+}
+func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)) error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		this.index += 1
+		this.router.addCallback(this.index, handle)
+		data.SendIndex = this.index
+		go this.flush(data)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
 }
 func (this *Network) AddHandle(title uint16, handle func(*DataStruct)) error {
-	return this.Router.addHandle(title, handle)
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		err = this.router.addHandle(title, handle)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
 }
-func (this *Network) SetDefaultHandle(defun func(*DataStruct)) {
-	this.Router.setDefaultHandle(defun)
+func (this *Network) SetDefaultHandle(defun func(*DataStruct)) error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		this.router.setDefaultHandle(defun)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
 }
 func (this *Network) RemoveHandle(title uint16) error {
-	return this.Router.removeHandle(title)
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		err = this.router.removeHandle(title)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
 }
 func (this *Network) Close() error {
 	var err error
-	if this != nil && this.alive {
+	if this != nil && this.alive && this.connect != nil {
+		this.Lock()
+		defer this.Unlock()
 		this.alive = false
-		this.Router.Dispose()
-		this.Router = nil
+		err = this.router.Dispose()
+		this.router = nil
 		err = this.connect.Close()
+		this.connect = nil
+
 		evt := new(events.Event)
 		evt.Type = events.CLOSE
 		this.DispatchEvent(evt)
@@ -271,14 +434,53 @@ func (this *Network) Close() error {
 	return err
 }
 func (this *Network) listen() {
-	go this.read()
+	for this != nil && this.alive {
+		buffer := make([]byte, 2048)
+		length, err := this.connect.Read(buffer)
+		if err == nil {
+			recvData := new(DataStruct)
+			titleBuffer := bytes.NewBuffer(buffer[0:2])
+			err = binary.Read(titleBuffer, binary.BigEndian, &recvData.Title)
+			utils.ErrorHandle("Read title", err)
+			labelBuffer := bytes.NewBuffer(buffer[2:4])
+			err = binary.Read(labelBuffer, binary.BigEndian, &recvData.Label)
+			utils.ErrorHandle("Read label", err)
+			sendIndexBuffer := bytes.NewBuffer(buffer[4:6])
+			err = binary.Read(sendIndexBuffer, binary.BigEndian, &recvData.SendIndex)
+			utils.ErrorHandle("Read send index", err)
+			receIndexBuffer := bytes.NewBuffer(buffer[6:8])
+			err = binary.Read(receIndexBuffer, binary.BigEndian, &recvData.ReceIndex)
+			utils.ErrorHandle("Read rece index", err)
+			if length > 8 {
+				recvData.Data = buffer[8:length]
+			}
+			this.router.onData(recvData)
+		} else {
+			evt := new(events.Event)
+			evt.Type = events.ERROR
+			evt.Data = err
+
+			this.DispatchEvent(evt)
+			this.Close()
+			break
+		}
+	}
+}
+func (this *Network) flush(data *DataStruct) {
+	stream := bytes.NewBuffer([]byte{})
+	binary.Write(stream, binary.BigEndian, data.Title)
+	binary.Write(stream, binary.BigEndian, data.Label)
+	binary.Write(stream, binary.BigEndian, data.SendIndex)
+	binary.Write(stream, binary.BigEndian, data.ReceIndex)
+	binary.Write(stream, binary.BigEndian, data.Data)
+	this.connect.Write(stream.Bytes())
 }
 func (this *Network) pong(message *DataStruct) {
 	if this.markTime == 0 {
 		go func() {
 			for {
-				if this.alive {
-					if time.Now().Unix()-this.markTime > this.Deadline {
+				if this != nil && this.alive && this.connect != nil {
+					if time.Now().Unix()-this.markTime > this.deadline {
 						this.Close()
 					}
 					time.Sleep(time.Second * 10)
@@ -289,75 +491,4 @@ func (this *Network) pong(message *DataStruct) {
 		}()
 	}
 	this.markTime = time.Now().Unix()
-}
-func (this *Network) write(data *DataStruct) {
-	length := int32(len(data.Data) + 8)
-	stream := bytes.NewBuffer([]byte{})
-	binary.Write(stream, binary.BigEndian, length)
-	binary.Write(stream, binary.BigEndian, data.Title)
-	binary.Write(stream, binary.BigEndian, data.Label)
-	binary.Write(stream, binary.BigEndian, data.SendIndex)
-	binary.Write(stream, binary.BigEndian, data.ReceIndex)
-	binary.Write(stream, binary.BigEndian, data.Data)
-	this.connect.Write(stream.Bytes())
-}
-func (this *Network) read() {
-	for {
-		if this.alive {
-			buf := make([]byte, 1024)
-			length, err := this.reader.Read(buf)
-			if err == nil {
-				this.buffer = append(this.buffer, buf[:length]...)
-				for len(this.buffer) > 0 {
-					if this.headRead {
-						if len(this.buffer) >= int(this.bufferLen) {
-							this.headRead = false
-							recvData := new(DataStruct)
-							titleBuffer := bytes.NewBuffer(this.buffer[0:2])
-							err = binary.Read(titleBuffer, binary.BigEndian, &recvData.Title)
-							utils.ErrorHandle("Read title", err)
-							labelBuffer := bytes.NewBuffer(this.buffer[2:4])
-							err = binary.Read(labelBuffer, binary.BigEndian, &recvData.Label)
-							utils.ErrorHandle("Read label", err)
-							sendIndexBuffer := bytes.NewBuffer(this.buffer[4:6])
-							err = binary.Read(sendIndexBuffer, binary.BigEndian, &recvData.SendIndex)
-							utils.ErrorHandle("Read send index", err)
-							receIndexBuffer := bytes.NewBuffer(this.buffer[6:8])
-							err = binary.Read(receIndexBuffer, binary.BigEndian, &recvData.ReceIndex)
-							utils.ErrorHandle("Read rece index", err)
-
-							if this.bufferLen > 8 {
-								recvData.Data = this.buffer[8:this.bufferLen]
-							}
-
-							this.buffer = this.buffer[this.bufferLen:len(this.buffer)]
-							this.Router.onData(recvData)
-						} else {
-							break
-						}
-					} else {
-						if len(this.buffer) >= 4 {
-							lenBuffer := bytes.NewBuffer(this.buffer[0:4])
-							err = binary.Read(lenBuffer, binary.BigEndian, &this.bufferLen)
-							utils.ErrorHandle("Read len", err)
-							this.headRead = true
-							this.buffer = this.buffer[4:len(this.buffer)]
-						}
-					}
-				}
-			} else {
-				this.errorCount++
-				evt := new(events.Event)
-				evt.Type = events.ERROR
-				evt.Data = err
-				this.DispatchEvent(evt)
-				if this.errorCount >= 10 {
-					this.Close()
-					break
-				}
-			}
-		} else {
-			break
-		}
-	}
 }

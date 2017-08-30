@@ -9,11 +9,11 @@ import (
 )
 
 type Listener struct {
-	Alive       bool
+	alive       bool
 	tcpAddress  *net.TCPAddr
 	tcpListener *net.TCPListener
 	upgrader    *websocket.Upgrader
-	localChan   chan *Connection
+	localChan   chan *ChanConnection
 	networkChan chan *Network
 	netType     string
 	address     string
@@ -24,13 +24,13 @@ func (this *Listener) Listener() {
 }
 func (this *Listener) Listen(netType string, address string) error {
 	var err error
-	this.Alive = true
+	this.alive = true
 	this.netType = netType
 	this.address = address
 	this.networkChan = make(chan *Network, 0)
 	switch this.netType {
 	case NETWORK_TYPE_LOCAL:
-		this.localChan = make(chan *Connection, 32)
+		this.localChan = make(chan *ChanConnection, 32)
 	case NETWORK_TYPE_TCP:
 		this.tcpAddress, err = net.ResolveTCPAddr("tcp", this.address)
 		utils.ErrorHandle("Listener ResolveTCPAddr...", err)
@@ -39,8 +39,8 @@ func (this *Listener) Listen(netType string, address string) error {
 	case NETWORK_TYPE_UDP:
 	case NETWORK_TYPE_WEB_SOCKET:
 		this.upgrader = new(websocket.Upgrader)
-		this.upgrader.ReadBufferSize = 1024
-		this.upgrader.WriteBufferSize = 1024
+		this.upgrader.ReadBufferSize = 2048
+		this.upgrader.WriteBufferSize = 2048
 		this.upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	}
 	go this.listen()
@@ -48,7 +48,7 @@ func (this *Listener) Listen(netType string, address string) error {
 }
 func (this *Listener) Dispose() error {
 	var err error
-	this.Alive = false
+	this.alive = false
 	close(this.networkChan)
 	switch this.netType {
 	case NETWORK_TYPE_LOCAL:
@@ -71,12 +71,10 @@ func (this *Listener) listen() {
 	switch this.netType {
 	case NETWORK_TYPE_LOCAL:
 		for {
-			if this.Alive {
+			if this.alive {
 				for c := range this.localChan {
-					connect := new(Connection)
-					connect.Connection()
-					connect.BindingConn = c
-					c.BindingConn = connect
+					connect := new(ChanConnection)
+					connect.ChanConnection(c)
 					nw := new(Network)
 					nw.Network()
 					nw.Create(connect)
@@ -91,7 +89,7 @@ func (this *Listener) listen() {
 		}
 	case NETWORK_TYPE_TCP:
 		for {
-			if this.Alive {
+			if this.alive {
 				connect, err := this.tcpListener.Accept()
 				if err == nil {
 					nw := new(Network)

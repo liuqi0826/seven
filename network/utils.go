@@ -24,9 +24,9 @@ func TCPConnect(n *Network, addr string) {
 	}
 }
 
-func LocalConnect(n *Network, l *Listener) {
-	c := new(Connection)
-	c.Connection()
-	n.Create(c)
-	l.localChan <- c
-}
+//func LocalConnect(n *Network, l *Listener) {
+//	c := new(ChanConnection)
+//	c.ChanConnection(nil)
+//	n.Create(c)
+//	l.localChan <- c
+//}

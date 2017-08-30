@@ -8,6 +8,7 @@ import (
 
 type Route struct {
 	sync.Mutex
+
 	Default  func(*DataStruct)
 	Table    map[uint16]func(*DataStruct)
 	Callback map[uint16]func(*DataStruct)
@@ -17,12 +18,16 @@ func (this *Route) Route() {
 	this.Table = make(map[uint16]func(*DataStruct))
 	this.Callback = make(map[uint16]func(*DataStruct))
 }
-func (this *Route) Dispose() {
+func (this *Route) Dispose() error {
+	var err error
 	if this != nil {
 		this.Default = nil
 		this.Table = nil
 		this.Callback = nil
+	} else {
+		err = errors.New("Route is disposed.")
 	}
+	return err
 }
 func (this *Route) setDefaultHandle(defun func(*DataStruct)) {
 	if this != nil {
