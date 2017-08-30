@@ -134,11 +134,11 @@ func (this *WSConnction) Read(buf []byte) (int, error) {
 	}
 	return 0, err
 }
-func (this *WSConnction) Write(p []byte) (int, error) {
+func (this *WSConnction) Write(msg []byte) (int, error) {
 	var err error
 	if this != nil && this.alive {
 		if len(this.writeBuf) < cap(this.writeBuf) {
-			this.writeBuf <- p
+			this.writeBuf <- msg
 		} else {
 			err = errors.New("Websocket connect is full.")
 			return 0, err
@@ -147,7 +147,7 @@ func (this *WSConnction) Write(p []byte) (int, error) {
 		err = errors.New("Websocket connection closed.")
 		return 0, err
 	}
-	return len(p), err
+	return len(msg), err
 }
 func (this *WSConnction) Close() error {
 	var err error
@@ -402,6 +402,29 @@ func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)
 	}
 	return err
 }
+func (this *Network) SendSafely(data *DataStruct) error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		this.index += 1
+		data.SendIndex = this.index
+		go func() {
+			var count int = 0
+			for {
+				if count >= 10 {
+					break
+				}
+				length, err := this.flush(data)
+				if length > 0 && err == nil {
+					break
+				}
+				count++
+			}
+		}()
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
+}
 func (this *Network) AddHandle(title uint16, handle func(*DataStruct)) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
@@ -481,14 +504,14 @@ func (this *Network) listen() {
 		}
 	}
 }
-func (this *Network) flush(data *DataStruct) {
+func (this *Network) flush(data *DataStruct) (n int, err error) {
 	stream := bytes.NewBuffer([]byte{})
 	binary.Write(stream, binary.BigEndian, data.Title)
 	binary.Write(stream, binary.BigEndian, data.Label)
 	binary.Write(stream, binary.BigEndian, data.SendIndex)
 	binary.Write(stream, binary.BigEndian, data.ReceIndex)
 	binary.Write(stream, binary.BigEndian, data.Data)
-	this.connect.Write(stream.Bytes())
+	return this.connect.Write(stream.Bytes())
 }
 func (this *Network) pong(message *DataStruct) {
 	if this.markTime == 0 {
