@@ -410,7 +410,7 @@ func (this *Network) SendSafely(data *DataStruct) error {
 		go func() {
 			var count int = 0
 			for {
-				if count >= 10 {
+				if count >= 100 {
 					break
 				}
 				length, err := this.flush(data)
