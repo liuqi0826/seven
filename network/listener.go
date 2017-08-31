@@ -1,11 +1,11 @@
 package network
 
 import (
-	"github.com/liuqi0826/seven/utils"
 	"net"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/liuqi0826/seven/utils"
 )
 
 type Listener struct {

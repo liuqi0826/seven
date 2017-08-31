@@ -16,6 +16,7 @@ import (
 )
 
 const MAX_NETWORK_PACKAGE_LENGTH = 2048
+const DELAY = time.Millisecond * 10
 
 type DataStruct struct {
 	Title     uint16
@@ -382,8 +383,6 @@ func (this *Network) SetHeartBeat(interval time.Duration) error {
 func (this *Network) Send(data *DataStruct) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
-		this.index += 1
-		data.SendIndex = this.index
 		go this.flush(data)
 	} else {
 		err = errors.New("Network is closed!")
@@ -393,10 +392,15 @@ func (this *Network) Send(data *DataStruct) error {
 func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
-		this.index += 1
-		this.router.addCallback(this.index, handle)
+		this.Lock()
+		defer this.Unlock()
+		this.index++
+		if this.index == 0 {
+			this.index = 1
+		}
 		data.SendIndex = this.index
-		go this.flush(data)
+		this.router.addCallback(this.index, handle)
+		this.SendSafely(data)
 	} else {
 		err = errors.New("Network is closed!")
 	}
@@ -405,19 +409,18 @@ func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)
 func (this *Network) SendSafely(data *DataStruct) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
-		this.index += 1
-		data.SendIndex = this.index
 		go func() {
 			var count int = 0
 			for {
-				if count >= 100 {
-					break
-				}
 				length, err := this.flush(data)
 				if length > 0 && err == nil {
 					break
 				}
 				count++
+				if count >= 100 {
+					break
+				}
+				time.Sleep(DELAY)
 			}
 		}()
 	} else {
@@ -447,6 +450,15 @@ func (this *Network) RemoveHandle(title uint16) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
 		err = this.router.removeHandle(title)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
+}
+func (this *Network) RemoveAllHandle() error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		err = this.router.removeAllHandle()
 	} else {
 		err = errors.New("Network is closed!")
 	}

@@ -78,6 +78,17 @@ func (this *Route) removeHandle(title uint16) error {
 	}
 	return err
 }
+func (this *Route) removeAllHandle() error {
+	var err error
+	if this != nil {
+		this.Lock()
+		defer this.Unlock()
+		this.Table = make(map[uint16]*CallBack)
+	} else {
+		err = errors.New("RemoveHandle function route is null")
+	}
+	return err
+}
 func (this *Route) addCallback(index uint16, handle func(*DataStruct)) error {
 	var err error
 	if this != nil {
@@ -123,11 +134,13 @@ func (this *Route) check() {
 			now := time.Now().Unix()
 			for k, v := range this.Table {
 				if now-v.CreateTime > 600 {
+					go v.Handle(nil)
 					delete(this.Table, k)
 				}
 			}
 			for k, v := range this.Callback {
 				if now-v.CreateTime > 600 {
+					go v.Handle(nil)
 					delete(this.Callback, k)
 				}
 			}
