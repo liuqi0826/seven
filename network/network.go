@@ -523,7 +523,12 @@ func (this *Network) flush(data *DataStruct) (n int, err error) {
 	binary.Write(stream, binary.BigEndian, data.SendIndex)
 	binary.Write(stream, binary.BigEndian, data.ReceIndex)
 	binary.Write(stream, binary.BigEndian, data.Data)
-	return this.connect.Write(stream.Bytes())
+	if this.connect != nil {
+		return this.connect.Write(stream.Bytes())
+	} else {
+		err := errors.New("Connect lost.")
+		return 0, err
+	}
 }
 func (this *Network) pong(message *DataStruct) {
 	if this.markTime == 0 {
