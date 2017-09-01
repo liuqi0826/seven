@@ -16,41 +16,56 @@ type EventDispatcher struct {
 }
 
 func (this *EventDispatcher) EventDispatcher() {
-	this.list = make(map[string]*dispatcher)
-}
-func (this *EventDispatcher) DispatchEvent(event *Event) {
-	if this.list == nil {
+	if this != nil {
 		this.list = make(map[string]*dispatcher)
 	}
-	if d, ok := this.list[event.Type]; ok {
-		d.dispatch(event)
+}
+func (this *EventDispatcher) DispatchEvent(event *Event) {
+	if this != nil {
+		if this.list == nil {
+			this.list = make(map[string]*dispatcher)
+		}
+		if d, ok := this.list[event.Type]; ok {
+			d.dispatch(event)
+		}
 	}
 }
 func (this *EventDispatcher) AddEventListener(eventType string, listener func(*Event)) {
-	if this.list == nil {
-		this.list = make(map[string]*dispatcher)
-	}
-	if d, ok := this.list[eventType]; ok {
-		d.addListener(listener)
-	} else {
-		dph := new(dispatcher)
-		dph.dispatcher(eventType)
-		dph.addListener(listener)
-		this.list[eventType] = dph
+	if this != nil {
+		if this.list == nil {
+			this.list = make(map[string]*dispatcher)
+		}
+		if d, ok := this.list[eventType]; ok {
+			d.addListener(listener)
+		} else {
+			dph := new(dispatcher)
+			dph.dispatcher(eventType)
+			dph.addListener(listener)
+			this.list[eventType] = dph
+		}
 	}
 }
 func (this *EventDispatcher) RemoveEventListener(eventType string, listener func(*Event)) {
-	if this.list == nil {
-		this.list = make(map[string]*dispatcher)
-		return
+	if this != nil {
+		if this.list == nil {
+			this.list = make(map[string]*dispatcher)
+			return
+		}
+		if d, ok := this.list[eventType]; ok {
+			d.removeListener(listener)
+		}
 	}
-	if d, ok := this.list[eventType]; ok {
-		d.removeListener(listener)
+}
+func (this *EventDispatcher) RemoveAllEventListener() {
+	if this != nil && this.list != nil {
+		this.list = make(map[string]*dispatcher)
 	}
 }
 func (this *EventDispatcher) HasEventListener(eventType string) bool {
-	if _, ok := this.list[eventType]; ok {
-		return true
+	if this != nil && this.list != nil {
+		if _, ok := this.list[eventType]; ok {
+			return true
+		}
 	}
 	return false
 }
