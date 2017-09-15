@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 
 	"github.com/liuqi0826/seven/engine/display/base"
+	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/resource"
 )
 
 type ResourceManager struct {
+	context core.IContext
+
 	//静态资源库
 	geometryResource  map[string]*resource.GeometryResource
 	materialResource  map[string]*resource.MaterialResource
@@ -30,7 +33,11 @@ func (this *ResourceManager) ResourceManager() {
 	this.materialRuntime = make(map[string]*base.Material)
 	this.shaderRuntime = make(map[string]*base.ShaderProgram)
 }
-
+func (this *ResourceManager) Setup(context core.IContext) error {
+	var err error
+	this.context = context
+	return err
+}
 func (this *ResourceManager) ParserGeometrie(value []byte) string {
 	gr := new(resource.GeometryResource)
 	err := json.Unmarshal(value, gr)
@@ -81,7 +88,7 @@ func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
 		sg := new(base.SubGeometry)
 		sg.SubGeometry(gr)
 		if !sg.Uploaded {
-			sg.Upload()
+			sg.Upload(this.context)
 		}
 	}
 	return nil

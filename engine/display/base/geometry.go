@@ -3,7 +3,8 @@ package base
 import (
 	"fmt"
 
-	"github.com/gonutz/d3d9"
+	"github.com/liuqi0826/seven/engine/display/core"
+	"github.com/liuqi0826/seven/engine/display/platform"
 	"github.com/liuqi0826/seven/engine/display/resource"
 )
 
@@ -12,8 +13,8 @@ type SubGeometry struct {
 	UsedCount int32
 	Uploaded  bool
 
-	IndexBuffer  d3d9.IndexBuffer
-	VertexBuffer [8]d3d9.VertexBuffer
+	IndexBuffer  platform.IIndexBuffer
+	VertexBuffer [8]platform.IVertexBuffer
 
 	geometryResource *resource.GeometryResource
 }
@@ -25,38 +26,97 @@ func (this *SubGeometry) SubGeometry(geometryResource *resource.GeometryResource
 		fmt.Println("GeometryResource is nil.")
 	}
 }
-func (this *SubGeometry) Upload() error {
+func (this *SubGeometry) Upload(context core.IContext) error {
 	var err error
-	// if len(this.geometryResource.Geometrie.Index) > 0 {
-	// 	this.IndexBuffer, err = context.CreateIndexBuffer(uint(len(this.geometryResource.Geometrie.Index)*2), d3d9.USAGE_WRITEONLY, d3d9.FMT_INDEX16, d3d9.POOL_MANAGED, nil)
-	// 	if err == nil {
-	// 		data, err := this.IndexBuffer.Lock(0, 0, d3d9.LOCK_DISCARD)
-	// 		if err == nil {
-	// 			data.SetUint16s(0, this.geometryResource.Geometrie.Index)
-	// 		} else {
-	// 			fmt.Println(err)
-	// 		}
-	// 		this.IndexBuffer.Unlock()
-	// 	} else {
-	// 		fmt.Println(err)
-	// 	}
-	// }
-	// if len(this.geometryResource.Geometrie.Vertex.Slot0) > 0 {
-	// 	this.VertexBuffer[0], err = context.CreateVertexBuffer(uint(len(this.geometryResource.Geometrie.Vertex.Slot0)*4), d3d9.USAGE_WRITEONLY, 0, d3d9.POOL_MANAGED, nil)
-	// 	if err == nil {
-	// 		data, err := this.VertexBuffer[0].Lock(0, 0, d3d9.LOCK_DISCARD)
-	// 		if err == nil {
-	// 			data.SetFloat32s(0, this.geometryResource.Geometrie.Vertex.Slot0)
-	// 		} else {
-	// 			fmt.Println(err)
-	// 		}
-	// 		this.VertexBuffer[0].Unlock()
-	// 	} else {
-	// 		fmt.Println(err)
-	// 	}
-	// }
+	this.IndexBuffer = context.CreateIndexBuffer()
+	if this.IndexBuffer != nil {
+		err = this.IndexBuffer.Upload(this.geometryResource.Geometrie.Index)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Println("IndexBuffer is nil")
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot0 != nil {
+		this.VertexBuffer[0] = context.CreateVertexBuffer()
+		if this.VertexBuffer[0] != nil {
+			err = this.VertexBuffer[0].Upload(this.geometryResource.Geometrie.Vertex.Slot0)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot1 != nil {
+		this.VertexBuffer[1] = context.CreateVertexBuffer()
+		if this.VertexBuffer[1] != nil {
+			err = this.VertexBuffer[1].Upload(this.geometryResource.Geometrie.Vertex.Slot1)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot2 != nil {
+		this.VertexBuffer[2] = context.CreateVertexBuffer()
+		if this.VertexBuffer[2] != nil {
+			err = this.VertexBuffer[2].Upload(this.geometryResource.Geometrie.Vertex.Slot2)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot3 != nil {
+		this.VertexBuffer[3] = context.CreateVertexBuffer()
+		if this.VertexBuffer[3] != nil {
+			err = this.VertexBuffer[3].Upload(this.geometryResource.Geometrie.Vertex.Slot3)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot4 != nil {
+		this.VertexBuffer[4] = context.CreateVertexBuffer()
+		if this.VertexBuffer[4] != nil {
+			err = this.VertexBuffer[4].Upload(this.geometryResource.Geometrie.Vertex.Slot4)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot5 != nil {
+		this.VertexBuffer[5] = context.CreateVertexBuffer()
+		if this.VertexBuffer[5] != nil {
+			err = this.VertexBuffer[5].Upload(this.geometryResource.Geometrie.Vertex.Slot5)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot6 != nil {
+		this.VertexBuffer[6] = context.CreateVertexBuffer()
+		if this.VertexBuffer[6] != nil {
+			err = this.VertexBuffer[6].Upload(this.geometryResource.Geometrie.Vertex.Slot6)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if this.geometryResource.Geometrie.Vertex.Slot7 != nil {
+		this.VertexBuffer[7] = context.CreateVertexBuffer()
+		if this.VertexBuffer[7] != nil {
+			err = this.VertexBuffer[7].Upload(this.geometryResource.Geometrie.Vertex.Slot7)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	this.Uploaded = true
 	return err
+}
+func (this *SubGeometry) GetIndexBuffer() platform.IIndexBuffer {
+	return this.IndexBuffer
+}
+func (this *SubGeometry) GetVertexBuffer() *[8]platform.IVertexBuffer {
+	return &this.VertexBuffer
 }
 func (this *SubGeometry) Dispose() {
 

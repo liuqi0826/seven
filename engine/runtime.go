@@ -6,41 +6,29 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/vulkan-go/asche"
 	"github.com/vulkan-go/glfw/v3.3/glfw"
-	"github.com/vulkan-go/vulkan"
 
 	"github.com/liuqi0826/seven/engine/display"
+	"github.com/liuqi0826/seven/engine/display/core"
+	"github.com/liuqi0826/seven/engine/display/platform/es"
+	//"github.com/liuqi0826/seven/engine/display/platform/vulkan"
+	"github.com/liuqi0826/seven/engine/utils"
 	"github.com/liuqi0826/seven/events"
 )
-
-const FPS30 = time.Duration(33333)
-const FPS60 = time.Duration(16666)
 
 func init() {
 	runtime.LockOSThread()
 }
 
-func check(err interface{}) {
-	switch v := err.(type) {
-	case error:
-		if v != nil {
-			panic(err)
-		}
-	case vulkan.Result:
-		if err := vulkan.Error(v); err != nil {
-			panic(err)
-		}
-	case bool:
-		if !v {
-			panic("condition failed: != true")
-		}
+func check(title string, err error) {
+	if err != nil {
+		fmt.Println(title, err)
 	}
 }
 
 var Instance *Runtime
 
-func Init(config *Config) error {
+func Init(config *utils.Config) error {
 	var err error
 	if Instance == nil {
 		Instance = new(Runtime)
@@ -65,36 +53,42 @@ type Runtime struct {
 	Ready bool
 
 	ViewPort display.Viewport
-
+	Context  core.IContext
 	Resource ResourceManager
 
-	config        *Config
-	instanceIndex int32
-	window        *glfw.Window
-	windowHandle  uintptr
-	context       asche.Context
+	config        *utils.Config
+	instanceIndex uint32
 
 	action func()
 	render func()
 }
 
 func (this *Runtime) Runtime() {
-	this.instanceIndex = -1
+	this.instanceIndex = 0
 	this.Resource = ResourceManager{}
 	this.Resource.ResourceManager()
 }
-func (this *Runtime) Setup(config *Config) error {
+func (this *Runtime) Setup(config *utils.Config) error {
 	var err error
 	this.config = config
 
 	err = glfw.Init()
-	check(err)
-	err = vulkan.Init()
-	check(err)
-	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	this.window, err = glfw.CreateWindow(config.WindowWidth, config.WindowHeight, config.WindowTitle, nil, nil)
-	check(err)
-	this.windowHandle = this.window.GLFWWindow()
+	check("glfw", err)
+
+	switch this.config.API {
+	case GLES:
+		this.Context = new(es.Context)
+	case VULKAN:
+	case D3D9:
+	case D3D12:
+	}
+
+	err = this.Context.Setup(this.config)
+	check("context", err)
+
+	err = this.Resource.Setup(this.Context)
+	check("resource", err)
+
 	this.Ready = true
 
 	event := new(events.Event)
@@ -121,7 +115,7 @@ func (this *Runtime) Start() {
 			this.render = this.defaultRender
 		}
 		for this.Alive {
-			if this.window.ShouldClose() {
+			if this.Context.ShouldClose() {
 				this.Alive = false
 			} else {
 				this.frame()
@@ -134,7 +128,7 @@ func (this *Runtime) Stop() {
 	this.Alive = false
 }
 func (this *Runtime) Destroy() {
-
+	glfw.Terminate()
 }
 func (this *Runtime) StageWidth() int32 {
 	return int32(this.config.WindowWidth)
@@ -154,7 +148,7 @@ func (this *Runtime) defaultRender() {
 	this.ViewPort.Frame()
 }
 func (this *Runtime) frame() {
-	bigin := time.Now().UnixNano()
+	begin := time.Now().UnixNano()
 
 	//action
 	if this.action != nil {
@@ -166,22 +160,12 @@ func (this *Runtime) frame() {
 		this.render()
 	}
 
+	this.Context.Present()
+
 	end := time.Now().UnixNano()
-	itv := time.Duration(end - bigin)
+	itv := time.Duration(end - begin)
 	if itv < this.config.FrameInterval {
 		time.Sleep(time.Nanosecond * time.Duration(this.config.FrameInterval-itv))
 	}
-	fmt.Println(itv.Nanoseconds())
-}
-
-//++++++++++++++++++++ Config ++++++++++++++++++++
-
-type Config struct {
-	Debug         bool
-	WindowTitle   string
-	WindowX       int
-	WindowY       int
-	WindowWidth   int
-	WindowHeight  int
-	FrameInterval time.Duration
+	//fmt.Println(itv.Nanoseconds())
 }

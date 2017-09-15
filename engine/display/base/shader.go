@@ -1,7 +1,11 @@
 package base
 
 import (
-	"github.com/gonutz/d3d9"
+	"fmt"
+
+	"github.com/liuqi0826/seven/engine/display/core"
+	"github.com/liuqi0826/seven/engine/display/platform"
+	"github.com/liuqi0826/seven/engine/display/resource"
 )
 
 type ShaderProgram struct {
@@ -9,24 +13,26 @@ type ShaderProgram struct {
 	UsedCount int32
 	Uploaded  bool
 
-	VertexCode   []byte
-	FragmentCode []byte
-
-	VertexShader   d3d9.VertexShader
-	FragmentShader d3d9.PixelShader
+	Program  platform.IProgram3D
+	Resource *resource.ShaderResource
 }
 
-func (this *ShaderProgram) ShaderProgram(id string, vertex []byte, fragment []byte) {
+func (this *ShaderProgram) ShaderProgram(id string, Resource *resource.ShaderResource) {
 	this.ID = id
-	this.VertexCode = vertex
-	this.FragmentCode = fragment
+	this.Resource = Resource
 }
-func (this *ShaderProgram) Upload(context d3d9.Device) {
-	//this.VertexShader, err := context.CreateVertexShaderFromBytes(this.VertexCode)
-	//this.FragmentShader, err := context.CreatePixelShaderFromBytes(this.FragmentCode)
-	this.Uploaded = true
+func (this *ShaderProgram) Upload(context core.IContext) {
+	this.Program = context.CreateProgram()
+	err := this.Program.Upload(this.Resource.Vertex, this.Resource.Fragment)
+	if err != nil {
+		fmt.Println(err)
+		return
+	} else {
+		this.Uploaded = true
+	}
 }
 func (this *ShaderProgram) Dispose() {
+	this.Program.Dispose()
 	this.Uploaded = false
 }
 

@@ -3,8 +3,7 @@ package resource
 import ()
 
 type ShaderResource struct {
-}
-
-func (this *ShaderResource) ShaderResource() {
-
+	ID       string `json:"id"`
+	Vertex   string `json:"vertex"`
+	Fragment string `json:"fragment"`
 }

@@ -1,7 +1,6 @@
 package display
 
 import (
-	"github.com/liuqi0826/seven/api/khronos/es3/gl"
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/render"
 )
@@ -33,8 +32,6 @@ func (this *Viewport) Viewport(width int32, height int32) {
 	this.Renderer = new(render.DefaultRenderer)
 }
 func (this *Viewport) Frame() {
-	gl.Clear(0)
-
 	this.Camera.Update()
-	this.Renderer.Render()
+	this.Renderer.Render(nil)
 }
