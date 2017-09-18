@@ -1,4 +1,4 @@
-package engine
+package resource
 
 import (
 	"encoding/json"
@@ -23,7 +23,10 @@ type ResourceManager struct {
 	shaderRuntime   map[string]*base.ShaderProgram
 }
 
-func (this *ResourceManager) ResourceManager() {
+func (this *ResourceManager) Setup(context core.IContext) error {
+	var err error
+	this.context = context
+
 	this.geometryResource = make(map[string]*resource.GeometryResource)
 	this.materialResource = make(map[string]*resource.MaterialResource)
 	this.animationResource = make(map[string]*resource.AnimationResource)
@@ -32,10 +35,6 @@ func (this *ResourceManager) ResourceManager() {
 	this.geometryRuntime = make(map[string]*base.SubGeometry)
 	this.materialRuntime = make(map[string]*base.Material)
 	this.shaderRuntime = make(map[string]*base.ShaderProgram)
-}
-func (this *ResourceManager) Setup(context core.IContext) error {
-	var err error
-	this.context = context
 	return err
 }
 func (this *ResourceManager) ParserGeometrie(value []byte) string {

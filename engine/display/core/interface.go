@@ -9,7 +9,7 @@ import (
 
 type IContext interface {
 	Setup(config *utils.Config) error
-	Clear(mask uint32)
+	Clear(color bool, depth bool, stencil bool)
 	CreateProgram() platform.IProgram3D
 	CreateIndexBuffer() platform.IIndexBuffer
 	CreateVertexBuffer() platform.IVertexBuffer
@@ -55,6 +55,8 @@ type IDisplayObject interface {
 	SetParent(IContainer)
 	GetLayerMask() int32
 	SetLayerMask(int32)
+	GetRenderer() IRenderer
+	SetRenderer(IRenderer)
 	Render()
 }
 

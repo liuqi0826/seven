@@ -7,6 +7,12 @@ import (
 	"github.com/liuqi0826/seven/engine/display/platform"
 )
 
+//Viewport render handle
+func ForwordRender() {
+
+}
+
+//Renderer
 type DefaultRender struct {
 	program *Program3D
 }
@@ -14,6 +20,9 @@ type DefaultRender struct {
 func (this *DefaultRender) Setup(program platform.IProgram3D) {
 	if shader, ok := program.(*Program3D); ok {
 		this.program = shader
+	} else {
+		this.program = new(Program3D)
+		this.program.Upload(ShaderDefaultVertex, ShaderDefaultFragment)
 	}
 }
 func (this *DefaultRender) Render(target core.IRenderable) {

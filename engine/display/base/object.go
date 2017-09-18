@@ -46,6 +46,7 @@ type DisplayObject struct {
 
 	root      core.IContainer
 	parent    core.IContainer
+	renderer  core.IRenderer
 	layerMask int32
 }
 
@@ -69,6 +70,12 @@ func (this *DisplayObject) GetLayerMask() int32 {
 }
 func (this *DisplayObject) SetLayerMask(mask int32) {
 	this.layerMask = mask
+}
+func (this *DisplayObject) GetRenderer() core.IRenderer {
+	return this.renderer
+}
+func (this *DisplayObject) SetRenderer(renderer core.IRenderer) {
+	this.renderer = renderer
 }
 func (this *DisplayObject) Render() {
 }

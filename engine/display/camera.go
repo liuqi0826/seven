@@ -28,6 +28,7 @@ type Camera struct {
 
 	Controller  core.IController
 	MousePicker pick.Picker
+	DisplayList []core.IDisplayObject
 
 	config *ProjectionConfig
 
@@ -40,13 +41,28 @@ type Camera struct {
 
 func (this *Camera) Camera(host *Viewport, config *ProjectionConfig) {
 	this.Object.Object()
+
 	this.host = host
 	this.config = config
+	if this.config == nil {
+		this.config = new(ProjectionConfig)
+		this.config.ProjectType = PROJECTION_TYPE_PERSPECTIVE
+		this.config.NearClipping = 0.1
+		this.config.FarClipping = 1000.0
+		this.config.Field = 45.0
+		this.config.CoordinateSystem = COORDINATE_SYSTEM_LEFT_HAND
+	}
+
 	this.MousePicker.Picker()
 	this.createProjectionMatrix()
 }
 func (this *Camera) Update() {
-	//	this.Controller.Update()
+	if this.Controller != nil {
+		this.Controller.Update()
+	}
+	if this.host != nil {
+		this.DisplayList = this.host.Scene.displayList
+	}
 }
 func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 	if up == nil {
@@ -100,19 +116,19 @@ func (this *Camera) createProjectionMatrix() {
 		switch this.config.CoordinateSystem {
 		case COORDINATE_SYSTEM_LEFT_HAND:
 			raw = [16]float32{
-				2.0 / float32(this.host.Width), 0.0, 0.0, 0.0,
-				0.0, 2.0 / float32(this.host.Height), 0.0, 0.0,
+				2.0 / float32(this.host.GetHeight()), 0.0, 0.0, 0.0,
+				0.0, 2.0 / float32(this.host.GetHeight()), 0.0, 0.0,
 				0.0, 0.0, 1.0 / (this.config.FarClipping - this.config.NearClipping), 0.0,
 				0.0, 0.0, this.config.NearClipping / (this.config.NearClipping - this.config.FarClipping), 1.0}
 		case COORDINATE_SYSTEM_RIGHT_HAND:
 			raw = [16]float32{
-				2.0 / float32(this.host.Width), 0.0, 0.0, 0.0,
-				0.0, 2.0 / float32(this.host.Height), 0.0, 0.0,
+				2.0 / float32(this.host.GetWidth()), 0.0, 0.0, 0.0,
+				0.0, 2.0 / float32(this.host.GetHeight()), 0.0, 0.0,
 				0.0, 0.0, 1.0 / (this.config.NearClipping - this.config.FarClipping), 0.0,
 				0.0, 0.0, this.config.NearClipping / (this.config.NearClipping - this.config.FarClipping), 1.0}
 		}
 	case PROJECTION_TYPE_PERSPECTIVE:
-		aspectRatio := float32(this.host.Width) / float32(this.host.Height)
+		aspectRatio := float32(this.host.GetWidth()) / float32(this.host.GetHeight())
 		yScale := 1.0 / float32(math.Tan(float64(this.config.Field/2.0)))
 		xScale := yScale / aspectRatio
 		switch this.config.CoordinateSystem {

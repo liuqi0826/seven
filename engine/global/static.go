@@ -1,11 +1,13 @@
-package engine
+package global
 
 import (
 	"time"
 )
 
-const FPS30 = time.Duration(33333)
-const FPS60 = time.Duration(16666)
+const (
+	FPS30 = time.Duration(33333)
+	FPS60 = time.Duration(16666)
+)
 
 const (
 	GLES   = "gles"
@@ -31,4 +33,9 @@ const (
 	FLOAT_2 = "float2"
 	FLOAT_3 = "float3"
 	FLOAT_4 = "float4"
+)
+
+const (
+	FORWARD  = "forward"
+	DEFERRED = "deferred"
 )

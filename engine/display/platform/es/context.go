@@ -73,7 +73,17 @@ func (this *Context) Setup(config *utils.Config) error {
 func (this *Context) GetWindow() *glfw.Window {
 	return this.window
 }
-func (this *Context) Clear(mask uint32) {
+func (this *Context) Clear(color bool, depth bool, stencil bool) {
+	var mask uint32
+	if color {
+		mask = mask | gl.COLOR_BUFFER_BIT
+	}
+	if depth {
+		mask = mask | gl.DEPTH_BUFFER_BIT
+	}
+	if stencil {
+		mask = mask | gl.STENCIL_BUFFER_BIT
+	}
 	if this.ready {
 		gl.Clear(mask)
 	}

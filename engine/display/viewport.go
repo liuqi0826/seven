@@ -1,37 +1,68 @@
 package display
 
 import (
-	"github.com/liuqi0826/seven/engine/display/core"
-	"github.com/liuqi0826/seven/engine/display/render"
+	"github.com/liuqi0826/seven/engine/global"
 )
 
 type Viewport struct {
-	Camera   *Camera
-	Scene    *Scene
-	Renderer core.IRenderer
+	Camera *Camera
+	Scene  *Scene
 
-	Width  int32
-	Height int32
+	render func()
+	width  uint32
+	height uint32
 }
 
-func (this *Viewport) Viewport(width int32, height int32) {
-	this.Width = width
-	this.Height = height
-	cameraConfig := new(ProjectionConfig)
-	cameraConfig.ProjectType = PROJECTION_TYPE_PERSPECTIVE
-	cameraConfig.NearClipping = 0.1
-	cameraConfig.FarClipping = 1000.0
-	cameraConfig.Field = 45.0
-	cameraConfig.CoordinateSystem = COORDINATE_SYSTEM_LEFT_HAND
+func (this *Viewport) Viewport(width uint32, height uint32, rendingType string) {
+	this.width = width
+	this.height = height
+
 	this.Camera = new(Camera)
-	this.Camera.Camera(this, cameraConfig)
+	this.Camera.Camera(this, nil)
 
 	this.Scene = new(Scene)
 	this.Scene.Scene()
 
-	this.Renderer = new(render.DefaultRenderer)
+	switch rendingType {
+	case global.FORWARD:
+		this.render = this.forword
+	case global.DEFERRED:
+		this.render = this.deferred
+	default:
+		this.render = this.forword
+	}
 }
 func (this *Viewport) Frame() {
 	this.Camera.Update()
-	this.Renderer.Render(nil)
+	this.render()
+}
+func (this *Viewport) GetWidth() uint32 {
+	return this.width
+}
+func (this *Viewport) SetWidth(width uint32) {
+	this.width = width
+}
+func (this *Viewport) GetHeight() uint32 {
+	return this.height
+}
+func (this *Viewport) SetHeight(height uint32) {
+	this.height = height
+}
+func (this *Viewport) SetRender(render func()) {
+	this.render = render
+}
+func (this *Viewport) forword() {
+	global.Context3D.Clear(true, true, true)
+
+	for _, do := range this.Camera.DisplayList {
+		do.Render()
+	}
+
+	global.Context3D.Present()
+}
+func (this *Viewport) deferred() {
+	global.Context3D.Clear(true, true, true)
+
+	global.Context3D.Present()
+
 }

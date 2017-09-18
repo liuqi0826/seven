@@ -14,8 +14,3 @@ type IProgram3D interface {
 	Upload(vertexProgram string, fragmentProgram string) error
 	Dispose()
 }
-type IVertexArrayConfig interface {
-	SetHandle(handle func())
-	Apply()
-	Dispose()
-}
