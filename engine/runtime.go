@@ -12,6 +12,7 @@ import (
 	"github.com/liuqi0826/seven/engine/resource"
 	//"github.com/liuqi0826/seven/engine/display/platform/vulkan"
 	"github.com/liuqi0826/seven/engine/global"
+	"github.com/liuqi0826/seven/engine/static"
 	"github.com/liuqi0826/seven/engine/utils"
 	"github.com/liuqi0826/seven/events"
 )
@@ -54,32 +55,30 @@ func (this *Runtime) Setup(config *utils.Config) error {
 	var err error
 	this.config = config
 
-	global.Debug = this.config.Debug
-	global.API = this.config.API
-	global.WindowTitle = this.config.WindowTitle
-	global.WindowWidth = this.config.WindowWidth
-	global.WindowHeight = this.config.WindowHeight
-	global.WindowX = this.config.WindowX
-	global.WindowY = this.config.WindowY
+	static.Debug = this.config.Debug
+	static.API = this.config.API
+	static.WindowTitle = this.config.WindowTitle
+	static.WindowWidth = this.config.WindowWidth
+	static.WindowHeight = this.config.WindowHeight
+	static.WindowX = this.config.WindowX
+	static.WindowY = this.config.WindowY
 
 	err = glfw.Init()
 	check("glfw", err)
 
 	switch this.config.API {
-	case global.GLES:
+	case static.GLES:
 		global.Context3D = new(es.Context)
-	case global.VULKAN:
-	case global.D3D9:
-	case global.D3D12:
+	case static.VULKAN:
+	case static.D3D9:
+	case static.D3D12:
 	}
 
 	err = global.Context3D.Setup(this.config)
 	check("context", err)
 
 	global.ResourceManager = new(resource.ResourceManager)
-
-	err = global.ResourceManager.Setup(global.Context3D)
-	check("resource", err)
+	global.ResourceManager.Setup(global.Context3D)
 
 	this.Ready = true
 
@@ -96,17 +95,13 @@ func (this *Runtime) Start() {
 	if this.Ready {
 		this.Alive = true
 		if this.config.FrameInterval == 0 {
-			this.config.FrameInterval = global.FPS60
+			this.config.FrameInterval = static.FPS60
 		}
 		this.ViewPort = display.Viewport{}
-		this.ViewPort.Viewport(uint32(this.config.WindowWidth), uint32(this.config.WindowHeight), global.FORWARD)
+		this.ViewPort.Viewport(uint32(this.config.WindowWidth), uint32(this.config.WindowHeight), static.FORWARD)
+
 		for this.Alive {
-			if global.Context3D.ShouldClose() {
-				this.Alive = false
-			} else {
-				this.frame()
-				glfw.PollEvents()
-			}
+			this.frame()
 		}
 	}
 }
@@ -124,14 +119,21 @@ func (this *Runtime) StageHeight() int32 {
 }
 func (this *Runtime) SetAction(action func()) {
 	this.action = action
+	if this.action != nil {
+		go this.action()
+	}
 }
 func (this *Runtime) frame() {
+	glfw.PollEvents()
+	if global.Context3D.ShouldClose() {
+		this.Alive = false
+	}
+
 	begin := time.Now().UnixNano()
 
-	//action
-	if this.action != nil {
-		this.action()
-	}
+	event := new(events.Event)
+	event.Type = events.ENTER_FRAME
+	this.DispatchEvent(event)
 
 	this.ViewPort.Frame()
 
@@ -140,5 +142,4 @@ func (this *Runtime) frame() {
 	if itv < this.config.FrameInterval {
 		time.Sleep(time.Nanosecond * time.Duration(this.config.FrameInterval-itv))
 	}
-	//fmt.Println(itv.Nanoseconds())
 }

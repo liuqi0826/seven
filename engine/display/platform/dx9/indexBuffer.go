@@ -1,12 +1,12 @@
 package dx9
 
 import (
-	"github.com/gonutz/d3d9"
+//"github.com/gonutz/d3d9"
 )
 
 type IndexBuffer struct {
-	Index       uint32
-	IndexBuffer d3d9.IndexBuffer
+	Index uint32
+	//IndexBuffer d3d9.IndexBuffer
 }
 
 func (this *IndexBuffer) Upload(data []uint16) error {

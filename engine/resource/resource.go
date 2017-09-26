@@ -1,16 +1,21 @@
 package resource
 
 import (
-	"encoding/json"
+	//"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
 
 	"github.com/liuqi0826/seven/engine/display/base"
 	"github.com/liuqi0826/seven/engine/display/core"
+	"github.com/liuqi0826/seven/engine/display/platform"
+	"github.com/liuqi0826/seven/engine/display/platform/es"
 	"github.com/liuqi0826/seven/engine/display/resource"
+	"github.com/liuqi0826/seven/engine/static"
 )
 
 type ResourceManager struct {
-	context core.IContext
-
+	context3D core.IContext
 	//静态资源库
 	geometryResource  map[string]*resource.GeometryResource
 	materialResource  map[string]*resource.MaterialResource
@@ -20,12 +25,16 @@ type ResourceManager struct {
 	//运行时资源
 	geometryRuntime map[string]*base.SubGeometry
 	materialRuntime map[string]*base.Material
-	shaderRuntime   map[string]*base.ShaderProgram
+	shaderRuntime   map[string]platform.IProgram3D
 }
 
 func (this *ResourceManager) Setup(context core.IContext) error {
 	var err error
-	this.context = context
+
+	this.context3D = context
+	if this.context3D == nil {
+		err = errors.New("Context3D is nil.")
+	}
 
 	this.geometryResource = make(map[string]*resource.GeometryResource)
 	this.materialResource = make(map[string]*resource.MaterialResource)
@@ -34,25 +43,106 @@ func (this *ResourceManager) Setup(context core.IContext) error {
 
 	this.geometryRuntime = make(map[string]*base.SubGeometry)
 	this.materialRuntime = make(map[string]*base.Material)
-	this.shaderRuntime = make(map[string]*base.ShaderProgram)
+	this.shaderRuntime = make(map[string]platform.IProgram3D)
+
+	this.pretreatment()
+
+	return err
+}
+func (this *ResourceManager) LoadGeometrie(file string) error {
+	var err error
+	res, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		id := this.ParserGeometrie(res)
+		if id != "" {
+			fmt.Println("Load Geometrie " + id)
+		}
+	}
+	return err
+}
+func (this *ResourceManager) LoadMaterial(file string) error {
+	var err error
+	res, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		id := this.ParserMaterial(res)
+		if id != "" {
+			fmt.Println("Load Material " + id)
+		}
+	}
+	return err
+}
+func (this *ResourceManager) LoadAnimation(file string) error {
+	var err error
+	res, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		id := this.ParserAnimation(res)
+		if id != "" {
+			fmt.Println("Load Animation " + id)
+		}
+	}
+	return err
+}
+func (this *ResourceManager) LoadShader(file string) error {
+	var err error
+	res, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		id := this.ParserShader(res)
+		if id != "" {
+			fmt.Println("Load Shader " + id)
+		}
+	}
 	return err
 }
 func (this *ResourceManager) ParserGeometrie(value []byte) string {
 	gr := new(resource.GeometryResource)
-	err := json.Unmarshal(value, gr)
+	err := gr.Parser(value)
 	if err == nil {
 		this.AddGeometrie(gr)
 		return gr.ID
+	} else {
+		fmt.Println(err)
 	}
 	return ""
 }
 func (this *ResourceManager) ParserMaterial(value []byte) string {
+	mt := new(resource.MaterialResource)
+	err := mt.Parser(value)
+	if err == nil {
+		this.AddMaterial(mt)
+		return mt.ID
+	} else {
+		fmt.Println(err)
+	}
 	return ""
 }
 func (this *ResourceManager) ParserAnimation(value []byte) string {
+	am := new(resource.AnimationResource)
+	err := am.Parser(value)
+	if err == nil {
+		this.AddAnimation(am)
+		return am.ID
+	} else {
+		fmt.Println(err)
+	}
 	return ""
 }
 func (this *ResourceManager) ParserShader(value []byte) string {
+	sr := new(resource.ShaderResource)
+	err := sr.Parser(value)
+	if err == nil {
+		this.AddShader(sr)
+		return sr.ID
+	} else {
+		fmt.Println(err)
+	}
 	return ""
 }
 
@@ -76,18 +166,27 @@ func (this *ResourceManager) GetAnimation(id string) *resource.AnimationResource
 	return nil
 }
 func (this *ResourceManager) AddShader(value *resource.ShaderResource) {
+	this.shaderResource[value.ID] = value
 }
 func (this *ResourceManager) GetShader(id string) *resource.ShaderResource {
+	if resource, ok := this.shaderResource[id]; ok {
+		return resource
+	}
 	return nil
 }
 
 func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
-	gr := this.GetGeometrie(id)
-	if gr != nil {
-		sg := new(base.SubGeometry)
-		sg.SubGeometry(gr)
-		if !sg.Uploaded {
-			sg.Upload(this.context)
+	if geometry, ok := this.geometryRuntime[id]; ok {
+		geometry.UsedCount++
+		return geometry
+	} else {
+		resource := this.GetGeometrie(id)
+		if resource != nil {
+			subGeometry := new(base.SubGeometry)
+			subGeometry.SubGeometry(resource)
+			subGeometry.Upload(this.context3D)
+			subGeometry.UsedCount++
+			return subGeometry
 		}
 	}
 	return nil
@@ -95,6 +194,38 @@ func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
 func (this *ResourceManager) CreateMaterial(id string) *base.Material {
 	return nil
 }
-func (this *ResourceManager) CreateShaderProgram(id string) *base.ShaderProgram {
+func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D {
+	if programe, ok := this.shaderRuntime[id]; ok {
+		programe.AddCount()
+		return programe
+	} else {
+		resource := this.GetShader(id)
+		if resource != nil {
+			switch static.API {
+			case static.GLES:
+				shader := this.context3D.CreateProgram()
+				shader.Upload(resource.Vertex, resource.Fragment)
+				shader.AddCount()
+				this.shaderRuntime[id] = shader
+				return shader
+			case static.VULKAN:
+			case static.D3D9:
+			case static.D3D12:
+			}
+		} else {
+			fmt.Println("no shader res.")
+		}
+	}
 	return nil
+}
+func (this *ResourceManager) pretreatment() {
+	switch static.API {
+	case static.GLES:
+		for _, v := range es.ShaderResource {
+			this.AddShader(v)
+		}
+	case static.VULKAN:
+	case static.D3D9:
+	case static.D3D12:
+	}
 }

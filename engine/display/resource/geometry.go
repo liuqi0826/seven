@@ -1,6 +1,8 @@
 package resource
 
-import ()
+import (
+	"encoding/json"
+)
 
 type GeometryResource struct {
 	ID        string             `json:"id"`
@@ -14,8 +16,8 @@ type GeometryResource struct {
 	Geometrie GeometrieComponent `json:"geometrie"`
 }
 type GeometrieComponent struct {
-	Index  []uint16        `json:"index"`
-	Vertex VertexComponent `json:"vertex"`
+	Index  []uint16     `json:"index"`
+	Vertex [8][]float32 `json:"vertex"`
 }
 type SkeletonComponent struct {
 	Struct        []interface{} `json:"struct"`
@@ -26,13 +28,9 @@ type SkeletonComponent struct {
 	NodeNameList  []string      `json:"nodeNameList"`
 	JointNameList []string      `json:"jointNameList"`
 }
-type VertexComponent struct {
-	Slot0 []float32 `json:"0"`
-	Slot1 []float32 `json:"1"`
-	Slot2 []float32 `json:"2"`
-	Slot3 []float32 `json:"3"`
-	Slot4 []float32 `json:"4"`
-	Slot5 []float32 `json:"5"`
-	Slot6 []float32 `json:"6"`
-	Slot7 []float32 `json:"7"`
+
+func (this *GeometryResource) Parser(value []byte) error {
+	var err error
+	err = json.Unmarshal(value, this)
+	return err
 }

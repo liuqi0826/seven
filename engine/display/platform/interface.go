@@ -11,6 +11,11 @@ type IVertexBuffer interface {
 	Dispose()
 }
 type IProgram3D interface {
+	AddCount()
+	SubCount()
+	GetCount() uint32
 	Upload(vertexProgram string, fragmentProgram string) error
 	Dispose()
+}
+type ITexture interface {
 }

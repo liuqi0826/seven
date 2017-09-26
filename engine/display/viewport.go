@@ -2,6 +2,7 @@ package display
 
 import (
 	"github.com/liuqi0826/seven/engine/global"
+	"github.com/liuqi0826/seven/engine/static"
 )
 
 type Viewport struct {
@@ -24,9 +25,9 @@ func (this *Viewport) Viewport(width uint32, height uint32, rendingType string) 
 	this.Scene.Scene()
 
 	switch rendingType {
-	case global.FORWARD:
+	case static.FORWARD:
 		this.render = this.forword
-	case global.DEFERRED:
+	case static.DEFERRED:
 		this.render = this.deferred
 	default:
 		this.render = this.forword
