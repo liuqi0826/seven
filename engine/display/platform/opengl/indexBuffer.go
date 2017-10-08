@@ -1,9 +1,9 @@
-package es
+package opengl
 
 import (
 	"errors"
 
-	gl "github.com/go-gl/gl/v3.1/gles2"
+	"github.com/go-gl/gl/v4.5-core/gl"
 )
 
 type IndexBuffer struct {

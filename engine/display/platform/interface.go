@@ -18,4 +18,7 @@ type IProgram3D interface {
 	Dispose()
 }
 type ITexture interface {
+	Upload(source []byte, sourceType string) error
+	UploadCompressedTexture(source []byte) error
+	Dispose()
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 
 	"github.com/liuqi0826/seven/engine/display"
-	"github.com/liuqi0826/seven/engine/display/platform/es"
+	"github.com/liuqi0826/seven/engine/display/platform/opengl"
 	"github.com/liuqi0826/seven/engine/resource"
 	//"github.com/liuqi0826/seven/engine/display/platform/vulkan"
 	"github.com/liuqi0826/seven/engine/global"
@@ -67,8 +67,8 @@ func (this *Runtime) Setup(config *utils.Config) error {
 	check("glfw", err)
 
 	switch this.config.API {
-	case static.GLES:
-		global.Context3D = new(es.Context)
+	case static.GL:
+		global.Context3D = new(opengl.Context)
 	case static.VULKAN:
 	case static.D3D9:
 	case static.D3D12:

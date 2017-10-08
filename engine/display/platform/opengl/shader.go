@@ -1,10 +1,10 @@
-package es
+package opengl
 
 import (
 	"fmt"
 	"strings"
 
-	gl "github.com/go-gl/gl/v3.1/gles2"
+	"github.com/go-gl/gl/v4.5-core/gl"
 
 	"github.com/liuqi0826/seven/engine/display/resource"
 )
@@ -118,10 +118,14 @@ void main() {
 	ShaderResource["default"].Fragment = `
 #version 330
 
+uniform sampler2D tex;
 in vec2 vtc;
 in vec3 vn;
+vec4 color;
 void main() {
-	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+	color = texture(tex, vtc);
+	color.rgb = color.rgb + vn.rgb;
+	gl_FragColor = color
 }
 ` + "\x00"
 

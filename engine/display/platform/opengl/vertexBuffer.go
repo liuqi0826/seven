@@ -1,7 +1,7 @@
-package es
+package opengl
 
 import (
-	gl "github.com/go-gl/gl/v3.1/gles2"
+	"github.com/go-gl/gl/v4.5-core/gl"
 )
 
 type VertexBuffer struct {

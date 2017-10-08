@@ -9,7 +9,7 @@ import (
 	"github.com/liuqi0826/seven/engine/display/base"
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/platform"
-	"github.com/liuqi0826/seven/engine/display/platform/es"
+	"github.com/liuqi0826/seven/engine/display/platform/opengl"
 	"github.com/liuqi0826/seven/engine/display/resource"
 	"github.com/liuqi0826/seven/engine/static"
 )
@@ -156,8 +156,13 @@ func (this *ResourceManager) GetGeometrie(id string) *resource.GeometryResource 
 	return nil
 }
 func (this *ResourceManager) AddMaterial(value *resource.MaterialResource) {
+	fmt.Println("AddMaterial", value.ID)
+	this.materialResource[value.ID] = value
 }
 func (this *ResourceManager) GetMaterial(id string) *resource.MaterialResource {
+	if mt, ok := this.materialResource[id]; ok {
+		return mt
+	}
 	return nil
 }
 func (this *ResourceManager) AddAnimation(value *resource.AnimationResource) {
@@ -186,12 +191,29 @@ func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
 			subGeometry.SubGeometry(resource)
 			subGeometry.Upload(this.context3D)
 			subGeometry.UsedCount++
+			this.geometryRuntime[id] = subGeometry
 			return subGeometry
 		}
 	}
 	return nil
 }
 func (this *ResourceManager) CreateMaterial(id string) *base.Material {
+	if material, ok := this.materialRuntime[id]; ok {
+		return material
+	} else {
+		fmt.Println(id)
+		resource := this.GetMaterial(id)
+		if resource != nil {
+			material := new(base.Material)
+			material.Material(resource)
+			material.Upload()
+			material.AddCount()
+			this.materialRuntime[id] = material
+			return material
+		} else {
+			fmt.Println(resource)
+		}
+	}
 	return nil
 }
 func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D {
@@ -202,7 +224,7 @@ func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D 
 		resource := this.GetShader(id)
 		if resource != nil {
 			switch static.API {
-			case static.GLES:
+			case static.GL:
 				shader := this.context3D.CreateProgram()
 				shader.Upload(resource.Vertex, resource.Fragment)
 				shader.AddCount()
@@ -220,8 +242,8 @@ func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D 
 }
 func (this *ResourceManager) pretreatment() {
 	switch static.API {
-	case static.GLES:
-		for _, v := range es.ShaderResource {
+	case static.GL:
+		for _, v := range opengl.ShaderResource {
 			this.AddShader(v)
 		}
 	case static.VULKAN:

@@ -10,7 +10,7 @@ const (
 )
 
 const (
-	GLES   = "gles"
+	GL     = "gl"
 	VULKAN = "vulkan"
 	D3D9   = "d3d9"
 	D3D12  = "d3d12"
@@ -38,4 +38,16 @@ const (
 const (
 	FORWARD  = "forward"
 	DEFERRED = "deferred"
+)
+
+const (
+	BITMAP = "bitmap"
+	ASTC   = "astc"
+	ATC    = "atc"
+	DXT1   = "dxt1"
+	DXT3   = "dxt3"
+	DXT5   = "dxt5"
+	ETC1   = "etc1"
+	ETC2   = "etc2"
+	PVRTC  = "pvrtc"
 )
