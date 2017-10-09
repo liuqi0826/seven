@@ -74,6 +74,8 @@ func (this *Program3D) GetCount() uint32 {
 func (this *Program3D) compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
+	fmt.Println(shader)
+
 	csources, free := gl.Strs(source)
 	gl.ShaderSource(shader, 1, csources, nil)
 	free()
@@ -102,31 +104,29 @@ func init() {
 	ShaderResource["default"] = new(resource.ShaderResource)
 	ShaderResource["default"].ID = "default"
 	ShaderResource["default"].Vertex = `
-#version 330
-
-in vec3 position;
-in vec2 texcoord;
-in vec3 normal;
-out vec2 vtc;
-out vec3 vn;
-void main() {
-	vtc = texcoord;
-	vn = normal;
-	gl_Position = vec4(position, 1.0);
-}
-` + "\x00"
+	#version 330
+	in vec3 position;
+	in vec2 texcoord;
+	in vec3 normal;
+	out vec2 vtc;
+	out vec3 vn;
+	void main() {
+		vtc = texcoord;
+		vn = normal;
+		gl_Position = vec4(position, 1.0);
+	}
+	` + "\x00"
 	ShaderResource["default"].Fragment = `
-#version 330
-
-uniform sampler2D tex;
-in vec2 vtc;
-in vec3 vn;
-vec4 color;
-void main() {
-	color = texture(tex, vtc);
-	color.rgb = color.rgb + vn.rgb;
-	gl_FragColor = color
-}
-` + "\x00"
+	#version 330
+	uniform sampler2D tex;
+	in vec2 vtc;
+	in vec3 vn;
+	vec4 color;
+	void main() {
+		color = texture(tex, vtc);
+		color.rgb = color.rgb + vn.rgb;
+		gl_FragColor = color;
+	}
+	` + "\x00"
 
 }

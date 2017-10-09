@@ -1,6 +1,8 @@
 package display
 
 import (
+	"fmt"
+
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/events"
 )
@@ -16,6 +18,7 @@ func (this *Scene) Scene() {
 	this.displayList = make([]core.IDisplayObject, 0)
 }
 func (this *Scene) AddChild(displayObject core.IDisplayObject) {
+	fmt.Println(displayObject)
 	this.displayList = append(this.displayList, displayObject)
 
 	displayObject.SetRoot(this)

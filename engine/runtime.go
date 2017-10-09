@@ -3,15 +3,16 @@ package engine
 import (
 	"fmt"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 
 	"github.com/liuqi0826/seven/engine/display"
 	"github.com/liuqi0826/seven/engine/display/platform/opengl"
-	"github.com/liuqi0826/seven/engine/resource"
 	//"github.com/liuqi0826/seven/engine/display/platform/vulkan"
 	"github.com/liuqi0826/seven/engine/global"
+	"github.com/liuqi0826/seven/engine/resource"
 	"github.com/liuqi0826/seven/engine/static"
 	"github.com/liuqi0826/seven/engine/utils"
 	"github.com/liuqi0826/seven/events"
@@ -36,6 +37,7 @@ func check(title string, err error) {
 
 type Runtime struct {
 	events.EventDispatcher
+	sync.Mutex
 
 	Alive bool
 	Ready bool
@@ -45,11 +47,12 @@ type Runtime struct {
 	config        *utils.Config
 	instanceIndex uint32
 
-	action func()
+	actionList []func()
 }
 
 func (this *Runtime) Runtime() {
 	this.instanceIndex = 0
+	this.actionList = make([]func(), 0)
 }
 func (this *Runtime) Setup(config *utils.Config) error {
 	var err error
@@ -79,6 +82,7 @@ func (this *Runtime) Setup(config *utils.Config) error {
 
 	global.ResourceManager = new(resource.ResourceManager)
 	global.ResourceManager.Setup(global.Context3D)
+	global.ResourceManager.AddEventListener(static.RESOURCE_EVENT, this.onResourceEvent)
 
 	this.Ready = true
 
@@ -117,11 +121,19 @@ func (this *Runtime) StageWidth() int32 {
 func (this *Runtime) StageHeight() int32 {
 	return int32(this.config.WindowHeight)
 }
-func (this *Runtime) SetAction(action func()) {
-	this.action = action
-	if this.action != nil {
-		go this.action()
+
+func (this *Runtime) onResourceEvent(event *events.Event) {
+	if fun, ok := event.Data.(func()); ok {
+		this.actionList = append(this.actionList, fun)
 	}
+}
+func (this *Runtime) action() {
+	this.Lock()
+	for _, fun := range this.actionList {
+		fun()
+	}
+	this.actionList = make([]func(), 0)
+	this.Unlock()
 }
 func (this *Runtime) frame() {
 	glfw.PollEvents()
@@ -134,6 +146,8 @@ func (this *Runtime) frame() {
 	event := new(events.Event)
 	event.Type = events.ENTER_FRAME
 	this.DispatchEvent(event)
+
+	this.action()
 
 	this.ViewPort.Frame()
 

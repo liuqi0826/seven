@@ -10,6 +10,10 @@ const (
 )
 
 const (
+	RESOURCE_EVENT = "resourceEvent"
+)
+
+const (
 	GL     = "gl"
 	VULKAN = "vulkan"
 	D3D9   = "d3d9"

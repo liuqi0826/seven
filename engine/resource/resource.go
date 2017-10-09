@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"sync"
 
 	"github.com/liuqi0826/seven/engine/display/base"
 	"github.com/liuqi0826/seven/engine/display/core"
@@ -12,9 +13,13 @@ import (
 	"github.com/liuqi0826/seven/engine/display/platform/opengl"
 	"github.com/liuqi0826/seven/engine/display/resource"
 	"github.com/liuqi0826/seven/engine/static"
+	"github.com/liuqi0826/seven/events"
 )
 
 type ResourceManager struct {
+	events.EventDispatcher
+	sync.Mutex
+
 	context3D core.IContext
 	//静态资源库
 	geometryResource  map[string]*resource.GeometryResource
@@ -188,10 +193,18 @@ func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
 		resource := this.GetGeometrie(id)
 		if resource != nil {
 			subGeometry := new(base.SubGeometry)
-			subGeometry.SubGeometry(resource)
-			subGeometry.Upload(this.context3D)
-			subGeometry.UsedCount++
 			this.geometryRuntime[id] = subGeometry
+
+			subGeometry.SubGeometry(resource)
+			subGeometry.UsedCount++
+
+			event := new(events.Event)
+			event.Type = static.RESOURCE_EVENT
+			event.Data = func() {
+				subGeometry.Upload(this.context3D)
+			}
+			this.DispatchEvent(event)
+
 			return subGeometry
 		}
 	}
@@ -205,10 +218,18 @@ func (this *ResourceManager) CreateMaterial(id string) *base.Material {
 		resource := this.GetMaterial(id)
 		if resource != nil {
 			material := new(base.Material)
-			material.Material(resource)
-			material.Upload()
-			material.AddCount()
 			this.materialRuntime[id] = material
+
+			material.Material(resource)
+			material.AddCount()
+
+			event := new(events.Event)
+			event.Type = static.RESOURCE_EVENT
+			event.Data = func() {
+				material.Upload()
+			}
+			this.DispatchEvent(event)
+
 			return material
 		} else {
 			fmt.Println(resource)
@@ -226,9 +247,16 @@ func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D 
 			switch static.API {
 			case static.GL:
 				shader := this.context3D.CreateProgram()
-				shader.Upload(resource.Vertex, resource.Fragment)
-				shader.AddCount()
 				this.shaderRuntime[id] = shader
+				shader.AddCount()
+
+				event := new(events.Event)
+				event.Type = static.RESOURCE_EVENT
+				event.Data = func() {
+					shader.Upload(resource.Vertex, resource.Fragment)
+				}
+				this.DispatchEvent(event)
+
 				return shader
 			case static.VULKAN:
 			case static.D3D9:
