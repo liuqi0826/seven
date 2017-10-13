@@ -48,10 +48,15 @@ type DisplayObject struct {
 	parent    core.IContainer
 	renderer  core.IRenderer
 	layerMask int32
+
+	projection *geom.Matrix4x4
+	transform  *geom.Matrix4x4
 }
 
 func (this *DisplayObject) DisplayObject() {
 	this.Object.Object()
+
+	this.transform = new(geom.Matrix4x4)
 }
 func (this *DisplayObject) GetRoot() core.IContainer {
 	return this.root
@@ -77,5 +82,13 @@ func (this *DisplayObject) GetRenderer() core.IRenderer {
 func (this *DisplayObject) SetRenderer(renderer core.IRenderer) {
 	this.renderer = renderer
 }
-func (this *DisplayObject) Render() {
+func (this *DisplayObject) Update(transform *geom.Matrix4x4) {
+	if transform != nil {
+		this.transform.Append(transform)
+	}
+}
+func (this *DisplayObject) Render(projection *geom.Matrix4x4) {
+	if projection != nil {
+		this.projection = projection
+	}
 }

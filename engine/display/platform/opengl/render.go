@@ -29,6 +29,15 @@ func (this *DefaultRender) Setup(program platform.IProgram3D) {
 func (this *DefaultRender) Render(target core.IRenderable) {
 	if this.ready && target != nil {
 		gl.UseProgram(this.program.Index)
+
+		value := target.GetValueBuffer()
+		if len(value) >= 32 {
+			projectionUniform := gl.GetUniformLocation(this.program.Index, gl.Str("projection\x00"))
+			gl.UniformMatrix4fv(projectionUniform, 1, false, &value[0])
+			transformUniform := gl.GetUniformLocation(this.program.Index, gl.Str("transform\x00"))
+			gl.UniformMatrix4fv(transformUniform, 1, false, &value[16])
+		}
+
 		vlist := target.GetVertexBuffer()
 		for _, vb := range *vlist {
 			if vertexBuffer, ok := vb.(*VertexBuffer); ok {

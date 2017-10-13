@@ -4,6 +4,7 @@ import (
 	"github.com/liuqi0826/seven/engine/display/platform"
 	"github.com/liuqi0826/seven/engine/utils"
 	"github.com/liuqi0826/seven/events"
+	"github.com/liuqi0826/seven/geom"
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 )
 
@@ -31,13 +32,14 @@ type IController interface {
 }
 
 type IRenderer interface {
-	Setup(platform.IProgram3D)
-	Render(IRenderable)
+	Setup(program3D platform.IProgram3D)
+	Render(renderable IRenderable)
 }
 
 type IRenderable interface {
 	GetIndexBuffer() platform.IIndexBuffer
 	GetVertexBuffer() *[8]platform.IVertexBuffer
+	GetValueBuffer() []float32
 }
 
 type IEntity interface {
@@ -50,22 +52,23 @@ type IDisplayObject interface {
 	GetName() string
 	SetName(string)
 	GetRoot() IContainer
-	SetRoot(IContainer)
+	SetRoot(root IContainer)
 	GetParent() IContainer
-	SetParent(IContainer)
+	SetParent(parent IContainer)
 	GetLayerMask() int32
 	SetLayerMask(int32)
 	GetRenderer() IRenderer
-	SetRenderer(IRenderer)
-	Render()
+	SetRenderer(renderer IRenderer)
+	Update(transform *geom.Matrix4x4)
+	Render(projection *geom.Matrix4x4)
 }
 
 type IContainer interface {
 	events.IEventDispatcher
 
-	AddChild(IDisplayObject)
-	RemoveChild(IDisplayObject) IDisplayObject
+	AddChild(displayObject IDisplayObject)
+	RemoveChild(displayObject IDisplayObject) IDisplayObject
 	RemoveAllChildren()
-	GetChildByName(string) IDisplayObject
+	GetChildByName(name string) IDisplayObject
 	GetChildrenNumber() int32
 }

@@ -3,6 +3,7 @@ package display
 import (
 	"github.com/liuqi0826/seven/engine/global"
 	"github.com/liuqi0826/seven/engine/static"
+	"github.com/liuqi0826/seven/geom"
 )
 
 type Viewport struct {
@@ -20,6 +21,10 @@ func (this *Viewport) Viewport(width uint32, height uint32, rendingType string) 
 
 	this.Camera = new(Camera)
 	this.Camera.Camera(this, nil)
+	this.Camera.Position.X = 0.0
+	this.Camera.Position.Y = 10.0
+	this.Camera.Position.Z = 10.0
+	this.Camera.LookAt(new(geom.Vector4), nil)
 
 	this.Scene = new(Scene)
 	this.Scene.Scene()
@@ -56,7 +61,14 @@ func (this *Viewport) forword() {
 	global.Context3D.Clear(true, true, true)
 
 	for _, do := range this.Camera.DisplayList {
-		do.Render()
+		projection := this.Camera.GetProjectionMatrix()
+		transform := this.Camera.GetTranformMatrix()
+
+		if projection != nil && transform != nil {
+			do.Update(transform)
+		}
+
+		do.Render(projection)
 	}
 
 	global.Context3D.Present()

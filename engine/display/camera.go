@@ -64,9 +64,17 @@ func (this *Camera) Update() {
 		this.DisplayList = this.host.Scene.displayList
 	}
 }
+func (this *Camera) GetProjectionMatrix() *geom.Matrix4x4 {
+	return &this.projection
+}
+func (this *Camera) GetTranformMatrix() *geom.Matrix4x4 {
+	mtx := this.tranform.Clone()
+	mtx.Invert()
+	return &mtx
+}
 func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 	if up == nil {
-		this.upAxis = geom.VERCTOR4_Y_AXIS
+		this.upAxis = geom.VERCTOR4_Y_AXIS.Clone()
 	} else {
 		this.upAxis = up.Clone()
 	}
@@ -75,7 +83,7 @@ func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 		zAxis := at.Clone()
 		zAxis.Subtract(&this.Position)
 		zAxis.Normalize()
-		xAxis := up.Clone()
+		xAxis := this.upAxis.Clone()
 		xAxis.CrossProduct(&zAxis)
 		xAxis.Normalize()
 		yAxis := zAxis.Clone()
@@ -93,7 +101,7 @@ func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 		zAxis := this.Position.Clone()
 		zAxis.Subtract(at)
 		zAxis.Normalize()
-		xAxis := up.Clone()
+		xAxis := this.upAxis.Clone()
 		xAxis.CrossProduct(&zAxis)
 		xAxis.Normalize()
 		yAxis := zAxis.Clone()

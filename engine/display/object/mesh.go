@@ -1,12 +1,11 @@
 package object
 
 import (
-	"fmt"
-
 	"github.com/liuqi0826/seven/engine/display/base"
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/platform"
 	"github.com/liuqi0826/seven/engine/display/render"
+	"github.com/liuqi0826/seven/geom"
 )
 
 type Mesh struct {
@@ -19,6 +18,8 @@ type Mesh struct {
 }
 
 func (this *Mesh) Mesh(geometry []*base.SubGeometry, material *base.Material, shader platform.IProgram3D) {
+	this.DisplayObject.DisplayObject()
+
 	this.geometry = geometry
 	this.material = material
 	this.shader = shader
@@ -28,10 +29,17 @@ func (this *Mesh) Mesh(geometry []*base.SubGeometry, material *base.Material, sh
 		this.renderer.Setup(this.shader)
 	}
 }
-func (this *Mesh) Render() {
+func (this *Mesh) Update(transform *geom.Matrix4x4) {
+	this.DisplayObject.Update(transform)
+	for _, v := range this.geometry {
+		v.Update(transform)
+	}
+}
+func (this *Mesh) Render(projection *geom.Matrix4x4) {
+	this.DisplayObject.Render(projection)
 	if this.renderer != nil {
 		for _, sg := range this.geometry {
-			fmt.Println(sg.ID)
+			sg.SetProjection(projection)
 			this.renderer.Render(sg)
 		}
 	}
