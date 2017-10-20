@@ -1,6 +1,8 @@
 package display
 
 import (
+	//"fmt"
+
 	"github.com/liuqi0826/seven/engine/global"
 	"github.com/liuqi0826/seven/engine/static"
 	"github.com/liuqi0826/seven/geom"
@@ -21,10 +23,13 @@ func (this *Viewport) Viewport(width uint32, height uint32, rendingType string) 
 
 	this.Camera = new(Camera)
 	this.Camera.Camera(this, nil)
-	this.Camera.Position.X = 0.0
-	this.Camera.Position.Y = 10.0
-	this.Camera.Position.Z = 10.0
-	this.Camera.LookAt(new(geom.Vector4), nil)
+	this.Camera.X = 0
+	this.Camera.Y = 0
+	this.Camera.Z = -3
+
+	zero := new(geom.Vector4)
+	zero.Vector4()
+	//this.Camera.LookAt(zero, nil)
 
 	this.Scene = new(Scene)
 	this.Scene.Scene()

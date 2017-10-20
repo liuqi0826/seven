@@ -6,6 +6,7 @@ import (
 	"github.com/liuqi0826/seven/engine/display/base"
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/pick"
+	"github.com/liuqi0826/seven/engine/static"
 	"github.com/liuqi0826/seven/geom"
 )
 
@@ -36,7 +37,6 @@ type Camera struct {
 
 	upAxis     geom.Vector4
 	projection geom.Matrix4x4
-	tranform   geom.Matrix4x4
 }
 
 func (this *Camera) Camera(host *Viewport, config *ProjectionConfig) {
@@ -63,12 +63,13 @@ func (this *Camera) Update() {
 	if this.host != nil {
 		this.DisplayList = this.host.Scene.displayList
 	}
+	this.Object.Update()
 }
 func (this *Camera) GetProjectionMatrix() *geom.Matrix4x4 {
 	return &this.projection
 }
 func (this *Camera) GetTranformMatrix() *geom.Matrix4x4 {
-	mtx := this.tranform.Clone()
+	mtx := this.GetTransform().Clone()
 	mtx.Invert()
 	return &mtx
 }
@@ -81,24 +82,26 @@ func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 	switch this.config.CoordinateSystem {
 	case COORDINATE_SYSTEM_LEFT_HAND:
 		zAxis := at.Clone()
-		zAxis.Subtract(&this.Position)
+		zAxis.Subtract(this.GetPosition())
 		zAxis.Normalize()
 		xAxis := this.upAxis.Clone()
 		xAxis.CrossProduct(&zAxis)
 		xAxis.Normalize()
 		yAxis := zAxis.Clone()
 		yAxis.CrossProduct(&xAxis)
-		xm := -xAxis.DotProduct(&this.Position)
-		ym := -yAxis.DotProduct(&this.Position)
-		zm := -zAxis.DotProduct(&this.Position)
+		xm := -xAxis.DotProduct(this.GetPosition())
+		ym := -yAxis.DotProduct(this.GetPosition())
+		zm := -zAxis.DotProduct(this.GetPosition())
 		raw := [16]float32{
 			xAxis.X, yAxis.X, zAxis.X, 0.0,
 			xAxis.Y, yAxis.Y, zAxis.Y, 0.0,
 			xAxis.Z, yAxis.Z, zAxis.Z, 0.0,
 			xm, ym, zm, 1.0}
-		this.tranform.Matrix4x4(&raw)
+		mtx := new(geom.Matrix4x4)
+		mtx.Matrix4x4(&raw)
+		this.GetTransform().Append(mtx)
 	case COORDINATE_SYSTEM_RIGHT_HAND:
-		zAxis := this.Position.Clone()
+		zAxis := this.GetPosition().Clone()
 		zAxis.Subtract(at)
 		zAxis.Normalize()
 		xAxis := this.upAxis.Clone()
@@ -106,15 +109,17 @@ func (this *Camera) LookAt(at *geom.Vector4, up *geom.Vector4) {
 		xAxis.Normalize()
 		yAxis := zAxis.Clone()
 		yAxis.CrossProduct(&xAxis)
-		xm := -xAxis.DotProduct(&this.Position)
-		ym := -yAxis.DotProduct(&this.Position)
-		zm := -zAxis.DotProduct(&this.Position)
+		xm := -xAxis.DotProduct(this.GetPosition())
+		ym := -yAxis.DotProduct(this.GetPosition())
+		zm := -zAxis.DotProduct(this.GetPosition())
 		raw := [16]float32{
 			xAxis.X, yAxis.X, zAxis.X, 0.0,
 			xAxis.Y, yAxis.Y, zAxis.Y, 0.0,
 			xAxis.Z, yAxis.Z, zAxis.Z, 0.0,
 			xm, ym, zm, 1.0}
-		this.tranform.Matrix4x4(&raw)
+		mtx := new(geom.Matrix4x4)
+		mtx.Matrix4x4(&raw)
+		this.GetTransform().Append(mtx)
 	}
 }
 func (this *Camera) createProjectionMatrix() {
@@ -156,4 +161,18 @@ func (this *Camera) createProjectionMatrix() {
 	}
 	this.projection = geom.Matrix4x4{}
 	this.projection.Matrix4x4(&raw)
+	switch static.API {
+	case static.GL:
+		raw = [16]float32{
+			1.0, 0.0, 0.0, 0.0,
+			0.0, 1.0, 0.0, 0.0,
+			0.0, 0.0, 2.0, 0.0,
+			0.0, 0.0, -1.0, 1.0}
+		mtx := new(geom.Matrix4x4)
+		mtx.Matrix4x4(&raw)
+		this.projection.Append(mtx)
+	case static.VULKAN:
+	case static.D3D9:
+	case static.D3D12:
+	}
 }

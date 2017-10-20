@@ -1,6 +1,8 @@
 package opengl
 
 import (
+	//"fmt"
+
 	"github.com/go-gl/gl/v4.5-core/gl"
 
 	"github.com/liuqi0826/seven/engine/display/core"

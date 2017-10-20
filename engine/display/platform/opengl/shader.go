@@ -18,7 +18,6 @@ type Program3D struct {
 
 func (this *Program3D) Upload(vertexProgram string, fragmentProgram string) error {
 	var err error
-	fmt.Println(0)
 	this.VertexShader, err = this.compileShader(vertexProgram, gl.VERTEX_SHADER)
 	if err != nil {
 		fmt.Println(err)
@@ -29,19 +28,15 @@ func (this *Program3D) Upload(vertexProgram string, fragmentProgram string) erro
 		fmt.Println(err)
 		return err
 	}
-	fmt.Println(1)
 
 	this.Index = gl.CreateProgram()
 
-	fmt.Println(2)
 	gl.AttachShader(this.Index, this.VertexShader)
 	gl.AttachShader(this.Index, this.FragmentShader)
 	gl.LinkProgram(this.Index)
 
-	fmt.Println(3)
 	var status int32
 	gl.GetProgramiv(this.Index, gl.LINK_STATUS, &status)
-	fmt.Println(4)
 	if status == gl.FALSE {
 		var logLength int32
 		gl.GetProgramiv(this.Index, gl.INFO_LOG_LENGTH, &logLength)
@@ -51,8 +46,6 @@ func (this *Program3D) Upload(vertexProgram string, fragmentProgram string) erro
 
 		return fmt.Errorf("failed to link program: %v", log)
 	}
-
-	fmt.Println("load success")
 
 	gl.DeleteShader(this.VertexShader)
 	gl.DeleteShader(this.FragmentShader)
