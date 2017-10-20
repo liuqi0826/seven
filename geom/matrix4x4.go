@@ -290,8 +290,8 @@ func (this *Matrix4x4) Decompose(orientationStyle string) [3]*Vector4 {
 	vec[2] = &scale
 	return vec
 }
-func (this *Matrix4x4) Recompose(components [3]Vector4, orientationStyle string) bool {
-	if components[0].X == 0 || components[1].Y == 0 || components[2].Z == 0 {
+func (this *Matrix4x4) Recompose(components [3]*Vector4, orientationStyle string) bool {
+	if components[2].X == 0 || components[2].Y == 0 || components[2].Z == 0 {
 		return false
 	}
 	if orientationStyle != AXIS_ANGLE && orientationStyle != QUATERNION && orientationStyle != EULER_ANGLES {
