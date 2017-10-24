@@ -155,7 +155,7 @@ func (this *Object) Update() {
 		components[0] = this.position
 		components[1] = this.rotation
 		components[2] = this.scale
-		this.transform.Recompose(components, geom.AXIS_ANGLE)
+		this.transform.Recompose(components, geom.EULER_ANGLES)
 		this.changed = false
 	}
 }

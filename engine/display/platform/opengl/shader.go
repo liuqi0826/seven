@@ -119,7 +119,7 @@ func init() {
 	vec4 color;
 	void main() {
 		color = texture(tex, vtc);
-		color.rgb = color.rgb + vn.rgb;
+		//color.rgb = color.rgb + vn.rgb;
 		gl_FragColor = color;
 	}
 	` + "\x00"

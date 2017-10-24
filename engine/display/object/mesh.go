@@ -30,9 +30,10 @@ func (this *Mesh) Mesh(geometry []*base.SubGeometry, material *base.Material, sh
 	}
 }
 func (this *Mesh) Update(transform *geom.Matrix4x4) {
-	this.DisplayObject.Update(transform)
+	this.Object.Update()
+	this.Object.GetTransform().Append(transform)
 	for _, v := range this.geometry {
-		v.Update(transform)
+		v.Update(this.Object.GetTransform())
 	}
 }
 func (this *Mesh) Render(projection *geom.Matrix4x4) {

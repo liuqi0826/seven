@@ -52,6 +52,12 @@ func (this *Context) Setup(config *utils.Config) error {
 	this.config = config
 	this.debug = config.Debug
 
+	glfw.WindowHint(glfw.Resizable, glfw.False)
+	//glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	//glfw.WindowHint(glfw.ContextVersionMinor, 5)
+	//glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	//glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+
 	this.window, err = glfw.CreateWindow(this.config.WindowWidth, this.config.WindowHeight, this.config.WindowTitle, nil, nil)
 	if err != nil {
 		return err
@@ -65,6 +71,10 @@ func (this *Context) Setup(config *utils.Config) error {
 
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println(version)
+
+	gl.Enable(gl.DEPTH_TEST)
+	gl.DepthFunc(gl.LESS)
+	gl.CullFace(gl.BACK)
 
 	this.ready = true
 
