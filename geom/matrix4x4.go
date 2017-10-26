@@ -64,6 +64,9 @@ func (this *Matrix4x4) Invert() bool {
 	return false
 }
 func (this *Matrix4x4) Append(lhs *Matrix4x4) {
+	if lhs == nil {
+		return
+	}
 	var data [16]float32 = [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
 	this.raw[0] = data[0]*lhs.raw[0] + data[1]*lhs.raw[4] + data[2]*lhs.raw[8] + data[3]*lhs.raw[12]
 	this.raw[1] = data[0]*lhs.raw[1] + data[1]*lhs.raw[5] + data[2]*lhs.raw[9] + data[3]*lhs.raw[13]
@@ -127,6 +130,9 @@ func (this *Matrix4x4) AppendTranslation(x float32, y float32, z float32) {
 	this.raw[14] += z
 }
 func (this *Matrix4x4) Prepend(rhs *Matrix4x4) {
+	if rhs == nil {
+		return
+	}
 	var data [16]float32 = [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
 	this.raw[0] = rhs.raw[0]*data[0] + rhs.raw[1]*data[4] + rhs.raw[2]*data[8] + rhs.raw[3]*data[12]
 	this.raw[1] = rhs.raw[0]*data[1] + rhs.raw[1]*data[5] + rhs.raw[2]*data[9] + rhs.raw[3]*data[13]
@@ -298,7 +304,10 @@ func (this *Matrix4x4) Recompose(components [3]*Vector4, orientationStyle string
 		orientationStyle = EULER_ANGLES
 	}
 	this.Identity()
-	scale := [12]float32{components[2].X, components[2].X, components[2].X, 0, components[2].Y, components[2].Y, components[2].Y, 0, components[2].Z, components[2].Z, components[2].Z, 0}
+	scale := [12]float32{
+		components[2].X, components[2].X, components[2].X, 0,
+		components[2].Y, components[2].Y, components[2].Y, 0,
+		components[2].Z, components[2].Z, components[2].Z, 0}
 	switch orientationStyle {
 	case EULER_ANGLES:
 		cx := float32(math.Cos(float64(components[1].X)))
@@ -376,6 +385,10 @@ func (this *Matrix4x4) Clone() Matrix4x4 {
 	m := Matrix4x4{}
 	m.Matrix4x4(&this.raw)
 	return m
+}
+func (this *Matrix4x4) ToArray() []float32 {
+	array := this.raw[:]
+	return array
 }
 func (this *Matrix4x4) ToBinary() []byte {
 	var byteArray []byte
