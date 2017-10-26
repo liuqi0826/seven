@@ -18,8 +18,7 @@ type SubGeometry struct {
 	VertexBuffer [8]platform.IVertexBuffer
 	ValueBuffer  []float32
 
-	projection *geom.Matrix4x4
-	transform  *geom.Matrix4x4
+	transform *geom.Matrix4x4
 
 	geometryResource *resource.GeometryResource
 }
@@ -59,9 +58,6 @@ func (this *SubGeometry) Upload(context core.IContext) error {
 	this.Uploaded = true
 	return err
 }
-func (this *SubGeometry) SetProjection(projection *geom.Matrix4x4) {
-	this.projection = projection
-}
 func (this *SubGeometry) GetIndexBuffer() platform.IIndexBuffer {
 	return this.IndexBuffer
 }
@@ -70,12 +66,6 @@ func (this *SubGeometry) GetVertexBuffer() *[8]platform.IVertexBuffer {
 }
 func (this *SubGeometry) GetValueBuffer() []float32 {
 	this.ValueBuffer = make([]float32, 0)
-	if this.projection != nil {
-		raw := this.projection.GetRaw()
-		for _, v := range raw {
-			this.ValueBuffer = append(this.ValueBuffer, v)
-		}
-	}
 	if this.transform != nil {
 		raw := this.transform.GetRaw()
 		for _, v := range raw {

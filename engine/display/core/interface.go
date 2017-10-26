@@ -25,6 +25,8 @@ type IContext interface {
 }
 
 type ICamera interface {
+	GetProjectionMatrix() *geom.Matrix4x4
+	GetTransformMatrix() *geom.Matrix4x4
 }
 
 type IController interface {
@@ -32,7 +34,9 @@ type IController interface {
 }
 
 type IRenderer interface {
-	Setup(program3D platform.IProgram3D)
+	Setup(camera ICamera, program3D platform.IProgram3D)
+	SetCamera(camera ICamera)
+	SetProgram(program platform.IProgram3D)
 	Render(renderable IRenderable)
 }
 
@@ -55,12 +59,14 @@ type IDisplayObject interface {
 	SetRoot(root IContainer)
 	GetParent() IContainer
 	SetParent(parent IContainer)
+	GetCamera() ICamera
+	SetCamera(camera ICamera)
 	GetLayerMask() int32
 	SetLayerMask(int32)
 	GetRenderer() IRenderer
 	SetRenderer(renderer IRenderer)
 	Update(transform *geom.Matrix4x4)
-	Render(projection *geom.Matrix4x4)
+	Render()
 }
 
 type IContainer interface {

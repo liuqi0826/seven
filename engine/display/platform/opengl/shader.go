@@ -100,6 +100,7 @@ func init() {
 	#version 330
 	uniform mat4 projection;
 	uniform mat4 transform;
+	uniform mat4 camera;
 	in vec3 position;
 	in vec2 texcoord;
 	in vec3 normal;
@@ -108,7 +109,7 @@ func init() {
 	void main() {
 		vtc = texcoord;
 		vn = normal;
-		gl_Position = projection * transform * vec4(position, 1.0);
+		gl_Position = projection * camera * transform * vec4(position, 1.0);
 	}
 	` + "\x00"
 	ShaderResource["default"].Fragment = `

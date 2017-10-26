@@ -1,7 +1,7 @@
 package opengl
 
 import (
-	//"fmt"
+	"fmt"
 
 	"github.com/go-gl/gl/v4.5-core/gl"
 
@@ -17,13 +17,40 @@ func ForwordRender() {
 //Renderer
 type DefaultRender struct {
 	ready   bool
+	camera  core.ICamera
 	program *Program3D
 }
 
-func (this *DefaultRender) Setup(program platform.IProgram3D) {
+func (this *DefaultRender) Setup(camera core.ICamera, program platform.IProgram3D) {
+	if camera != nil {
+		this.camera = camera
+	}
 	if shader, ok := program.(*Program3D); ok {
-		this.ready = true
 		this.program = shader
+	}
+	if this.camera != nil && this.program != nil {
+		this.ready = true
+	} else {
+		this.ready = false
+	}
+}
+func (this *DefaultRender) SetCamera(camera core.ICamera) {
+	if camera != nil {
+		this.camera = camera
+	}
+	if this.camera != nil && this.program != nil {
+		this.ready = true
+	} else {
+		this.ready = false
+	}
+	fmt.Println(this.ready)
+}
+func (this *DefaultRender) SetProgram(program platform.IProgram3D) {
+	if shader, ok := program.(*Program3D); ok {
+		this.program = shader
+	}
+	if this.camera != nil && this.program != nil {
+		this.ready = true
 	} else {
 		this.ready = false
 	}
@@ -32,13 +59,21 @@ func (this *DefaultRender) Render(target core.IRenderable) {
 	if this.ready && target != nil {
 		gl.UseProgram(this.program.Index)
 
+		projection := this.camera.GetProjectionMatrix().ToArray()
+		projectionUniform := gl.GetUniformLocation(this.program.Index, gl.Str("projection\x00"))
+		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+
+		camera := this.camera.GetTransformMatrix().ToArray()
+		cameraUniform := gl.GetUniformLocation(this.program.Index, gl.Str("camera\x00"))
+		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
+
 		value := target.GetValueBuffer()
-		if len(value) >= 32 {
-			projectionUniform := gl.GetUniformLocation(this.program.Index, gl.Str("projection\x00"))
-			gl.UniformMatrix4fv(projectionUniform, 1, false, &value[0])
+		if len(value) >= 16 {
 			transformUniform := gl.GetUniformLocation(this.program.Index, gl.Str("transform\x00"))
-			gl.UniformMatrix4fv(transformUniform, 1, false, &value[16])
+			gl.UniformMatrix4fv(transformUniform, 1, false, &value[0])
 		}
+
+		//fmt.Println(projection, camera, value)
 
 		vlist := target.GetVertexBuffer()
 		for _, vb := range *vlist {

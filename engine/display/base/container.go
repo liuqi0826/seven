@@ -3,7 +3,6 @@ package base
 import (
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/events"
-	"github.com/liuqi0826/seven/geom"
 )
 
 type DisplayObjectContainer struct {
@@ -63,8 +62,8 @@ func (this *DisplayObjectContainer) SetRoot(root core.IContainer) {
 func (this *DisplayObjectContainer) GetChildrenNumber() int32 {
 	return int32(len(this.displayList))
 }
-func (this *DisplayObjectContainer) Render(projection *geom.Matrix4x4) {
+func (this *DisplayObjectContainer) Render() {
 	for _, c := range this.displayList {
-		c.Render(projection)
+		c.Render()
 	}
 }

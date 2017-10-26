@@ -26,21 +26,27 @@ func (this *Mesh) Mesh(geometry []*base.SubGeometry, material *base.Material, sh
 
 	this.renderer = render.CreateRender("default")
 	if this.renderer != nil {
-		this.renderer.Setup(this.shader)
+		this.renderer.Setup(this.GetCamera(), this.shader)
+	}
+}
+func (this *Mesh) SetCamera(camera core.ICamera) {
+	this.DisplayObject.SetCamera(camera)
+	if this.renderer != nil {
+		this.renderer.SetCamera(camera)
 	}
 }
 func (this *Mesh) Update(transform *geom.Matrix4x4) {
 	this.Object.Update()
 	this.Object.GetTransform().Append(transform)
+
+	mtx := this.Object.GetTransform()
 	for _, v := range this.geometry {
-		v.Update(this.Object.GetTransform())
+		v.Update(mtx)
 	}
 }
-func (this *Mesh) Render(projection *geom.Matrix4x4) {
-	this.DisplayObject.Render(projection)
+func (this *Mesh) Render() {
 	if this.renderer != nil {
 		for _, sg := range this.geometry {
-			sg.SetProjection(projection)
 			this.renderer.Render(sg)
 		}
 	}

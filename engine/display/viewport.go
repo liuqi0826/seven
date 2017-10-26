@@ -5,12 +5,10 @@ import (
 
 	"github.com/liuqi0826/seven/engine/global"
 	"github.com/liuqi0826/seven/engine/static"
-	"github.com/liuqi0826/seven/geom"
 )
 
 type Viewport struct {
-	Camera *Camera
-	Scene  *Scene
+	Scene *Scene
 
 	render func()
 	width  uint32
@@ -20,16 +18,6 @@ type Viewport struct {
 func (this *Viewport) Viewport(width uint32, height uint32, rendingType string) {
 	this.width = width
 	this.height = height
-
-	this.Camera = new(Camera)
-	this.Camera.Camera(this, nil)
-	this.Camera.X = 0
-	this.Camera.Y = 0
-	this.Camera.Z = -3
-
-	zero := new(geom.Vector4)
-	zero.Vector4()
-	//this.Camera.LookAt(zero, nil)
 
 	this.Scene = new(Scene)
 	this.Scene.Scene()
@@ -44,7 +32,7 @@ func (this *Viewport) Viewport(width uint32, height uint32, rendingType string) 
 	}
 }
 func (this *Viewport) Frame() {
-	this.Camera.Update()
+	this.Scene.camera.Update()
 	this.render()
 }
 func (this *Viewport) GetWidth() uint32 {
@@ -65,15 +53,9 @@ func (this *Viewport) SetRender(render func()) {
 func (this *Viewport) forword() {
 	global.Context3D.Clear(true, true, true)
 
-	for _, do := range this.Camera.DisplayList {
-		projection := this.Camera.GetProjectionMatrix()
-		transform := this.Camera.GetTranformMatrix()
-
-		if projection != nil && transform != nil {
-			do.Update(transform)
-		}
-
-		do.Render(projection)
+	for _, do := range this.Scene.camera.DisplayList {
+		do.Update(nil)
+		do.Render()
 	}
 
 	global.Context3D.Present()

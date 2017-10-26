@@ -1,7 +1,7 @@
 package base
 
 import (
-	"fmt"
+	//"fmt"
 
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/events"
@@ -94,39 +94,39 @@ func (this *Object) GetTransform() *geom.Matrix4x4 {
 
 func (this *Object) Update() {
 	if this.position.X != this.X {
-		fmt.Println("x", this.X)
+		//fmt.Println("x", this.X)
 		this.position.X = this.X
 		this.changed = true
 	}
 	if this.position.Y != this.Y {
-		fmt.Println("y", this.Y)
+		//fmt.Println("y", this.Y)
 		this.position.Y = this.Y
 		this.changed = true
 	}
 	if this.position.Z != this.Z {
-		fmt.Println("z", this.Z)
+		//fmt.Println("z", this.Z)
 		this.position.Z = this.Z
 		this.changed = true
 	}
 
 	if this.rotation.X != this.RotationX {
-		fmt.Println("rotationX", this.RotationX)
+		//fmt.Println("rotationX", this.RotationX)
 		this.rotation.X = this.RotationX
 		this.changed = true
 	}
 	if this.rotation.Y != this.RotationY {
-		fmt.Println("rotationY", this.RotationY)
+		//fmt.Println("rotationY", this.RotationY)
 		this.rotation.Y = this.RotationY
 		this.changed = true
 	}
 	if this.rotation.Z != this.RotationZ {
-		fmt.Println("rotationZ", this.RotationZ)
+		//fmt.Println("rotationZ", this.RotationZ)
 		this.rotation.Z = this.RotationZ
 		this.changed = true
 	}
 
 	if this.scale.X != this.ScaleX {
-		fmt.Println("scaleX", this.ScaleX)
+		//fmt.Println("scaleX", this.ScaleX)
 		if this.ScaleX <= 0 {
 			this.ScaleX = 0.00000000001
 		}
@@ -134,7 +134,7 @@ func (this *Object) Update() {
 		this.changed = true
 	}
 	if this.scale.Y != this.ScaleY {
-		fmt.Println("scaleY", this.ScaleY)
+		//fmt.Println("scaleY", this.ScaleY)
 		if this.ScaleY <= 0 {
 			this.ScaleY = 0.00000000001
 		}
@@ -142,7 +142,7 @@ func (this *Object) Update() {
 		this.changed = true
 	}
 	if this.scale.Z != this.ScaleZ {
-		fmt.Println("scaleZ", this.ScaleZ)
+		//fmt.Println("scaleZ", this.ScaleZ)
 		if this.ScaleZ <= 0 {
 			this.ScaleZ = 0.00000000001
 		}
@@ -168,9 +168,8 @@ type DisplayObject struct {
 	root      core.IContainer
 	parent    core.IContainer
 	renderer  core.IRenderer
+	camera    core.ICamera
 	layerMask int32
-
-	projection *geom.Matrix4x4
 }
 
 func (this *DisplayObject) DisplayObject() {
@@ -200,13 +199,17 @@ func (this *DisplayObject) GetRenderer() core.IRenderer {
 func (this *DisplayObject) SetRenderer(renderer core.IRenderer) {
 	this.renderer = renderer
 }
+func (this *DisplayObject) GetCamera() core.ICamera {
+	return this.camera
+}
+func (this *DisplayObject) SetCamera(camera core.ICamera) {
+	this.camera = camera
+}
 func (this *DisplayObject) Update(transform *geom.Matrix4x4) {
+	this.Object.Update()
 	if transform != nil {
 		this.transform.Append(transform)
 	}
 }
-func (this *DisplayObject) Render(projection *geom.Matrix4x4) {
-	if projection != nil {
-		this.projection = projection
-	}
+func (this *DisplayObject) Render() {
 }
