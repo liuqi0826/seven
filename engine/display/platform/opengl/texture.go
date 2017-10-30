@@ -56,7 +56,6 @@ func (this *Texture) Upload(source []byte, sourceType string) error {
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
 
 	gl.GenTextures(1, &this.Index)
-	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, this.Index)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
@@ -68,6 +67,29 @@ func (this *Texture) Upload(source []byte, sourceType string) error {
 func (this *Texture) UploadCompressedTexture(source []byte) error {
 	var err error
 	return err
+}
+func (this *Texture) SetSlot(index int32) {
+	var solt uint32
+	switch index {
+	case 0:
+		solt = gl.TEXTURE0
+	case 1:
+		solt = gl.TEXTURE1
+	case 2:
+		solt = gl.TEXTURE2
+	case 3:
+		solt = gl.TEXTURE3
+	case 4:
+		solt = gl.TEXTURE4
+	case 5:
+		solt = gl.TEXTURE5
+	case 6:
+		solt = gl.TEXTURE6
+	case 7:
+		solt = gl.TEXTURE7
+	}
+	gl.ActiveTexture(solt)
+	gl.BindTexture(gl.TEXTURE_2D, this.Index)
 }
 func (this *Texture) Dispose() {
 

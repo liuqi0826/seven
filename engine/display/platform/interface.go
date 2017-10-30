@@ -20,5 +20,6 @@ type IProgram3D interface {
 type ITexture interface {
 	Upload(source []byte, sourceType string) error
 	UploadCompressedTexture(source []byte) error
+	SetSlot(index int32)
 	Dispose()
 }

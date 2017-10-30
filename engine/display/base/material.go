@@ -10,7 +10,7 @@ import (
 type Material struct {
 	ID string
 
-	texture []platform.ITexture
+	texture [8]platform.ITexture
 
 	userCount          uint32
 	uploadTextureCount int32
@@ -23,21 +23,33 @@ func (this *Material) Material(materialResource *resource.MaterialResource) {
 	if materialResource != nil {
 		this.ID = materialResource.ID
 		this.materialResource = materialResource
-		this.texture = make([]platform.ITexture, 0)
+		this.texture = [8]platform.ITexture{}
 	}
 }
 func (this *Material) Upload() {
 	if this.materialResource != nil {
-		for _, t := range this.materialResource.TextureList {
+		for i, t := range this.materialResource.TextureList {
 			switch static.API {
 			case static.GL:
-				text := new(opengl.Texture)
-				text.Upload(t.Texture, t.Type)
-
-				this.texture = append(this.texture, text)
+				if i < 8 {
+					text := new(opengl.Texture)
+					text.Upload(t.Texture, t.Type)
+					this.texture[i] = text
+				}
 			}
 		}
 		this.uploaded = true
+	}
+}
+func (this *Material) Bind() {
+	for i, t := range this.texture {
+		switch static.API {
+		case static.GL:
+			if t != nil {
+				idx := int32(i)
+				t.SetSlot(idx)
+			}
+		}
 	}
 }
 func (this *Material) AddCount() {

@@ -97,7 +97,7 @@ func init() {
 	ShaderResource["default"] = new(resource.ShaderResource)
 	ShaderResource["default"].ID = "default"
 	ShaderResource["default"].Vertex = `
-	#version 330
+	#version 420
 	uniform mat4 projection;
 	uniform mat4 transform;
 	uniform mat4 camera;
@@ -113,8 +113,8 @@ func init() {
 	}
 	` + "\x00"
 	ShaderResource["default"].Fragment = `
-	#version 330
-	uniform sampler2D tex;
+	#version 420
+	layout (binding = 0) uniform sampler2D tex;
 	in vec2 vtc;
 	in vec3 vn;
 	vec4 color;

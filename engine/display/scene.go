@@ -23,7 +23,7 @@ func (this *Scene) Scene() {
 	this.camera.Camera(this, nil)
 	this.camera.X = 0
 	this.camera.Y = 0
-	this.camera.Z = -5
+	this.camera.Z = -2
 
 	zero := new(geom.Vector4)
 	zero.Vector4()

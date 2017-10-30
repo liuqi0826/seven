@@ -73,8 +73,6 @@ func (this *DefaultRender) Render(target core.IRenderable) {
 			gl.UniformMatrix4fv(transformUniform, 1, false, &value[0])
 		}
 
-		//fmt.Println(projection, camera, value)
-
 		vlist := target.GetVertexBuffer()
 		for _, vb := range *vlist {
 			if vertexBuffer, ok := vb.(*VertexBuffer); ok {

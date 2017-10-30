@@ -46,6 +46,7 @@ func (this *Mesh) Update(transform *geom.Matrix4x4) {
 }
 func (this *Mesh) Render() {
 	if this.renderer != nil {
+		this.material.Bind()
 		for _, sg := range this.geometry {
 			this.renderer.Render(sg)
 		}
