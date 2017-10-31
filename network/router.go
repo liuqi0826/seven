@@ -108,7 +108,6 @@ func (this *Route) addCallback(index uint16, handle func(*DataStruct)) error {
 	return err
 }
 func (this *Route) onData(ds *DataStruct) {
-	fmt.Println(ds.Title, ds.Label, ds.SendIndex, ds.ReceIndex)
 	if this != nil {
 		if cb, ok := this.Callback[ds.ReceIndex]; ok {
 			go cb.Handle(ds)
