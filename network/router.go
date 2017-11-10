@@ -115,9 +115,6 @@ func (this *Route) onData(ds *DataStruct) {
 			return
 		}
 		if cb, ok := this.Table[ds.Title]; ok {
-			if ds.Title != 0 {
-				fmt.Println("ondata", ds)
-			}
 			go cb.Handle(ds)
 			return
 		} else {
@@ -137,12 +134,6 @@ func (this *Route) check() {
 		select {
 		case <-this.ticker.C:
 			now := time.Now().Unix()
-			for k, v := range this.Table {
-				if now-v.CreateTime > 600 {
-					go v.Handle(nil)
-					delete(this.Table, k)
-				}
-			}
 			for k, v := range this.Callback {
 				if now-v.CreateTime > 600 {
 					go v.Handle(nil)
