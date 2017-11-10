@@ -43,6 +43,7 @@ const (
 )
 
 type Event struct {
-	Type string
-	Data interface{}
+	Type   string
+	Target interface{}
+	Data   interface{}
 }

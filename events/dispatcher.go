@@ -12,11 +12,13 @@ type IEventDispatcher interface {
 }
 
 type EventDispatcher struct {
+	host interface{}
 	list map[string]*dispatcher
 }
 
-func (this *EventDispatcher) EventDispatcher() {
+func (this *EventDispatcher) EventDispatcher(host interface{}) {
 	if this != nil {
+		this.host = host
 		this.list = make(map[string]*dispatcher)
 	}
 }
@@ -26,6 +28,11 @@ func (this *EventDispatcher) DispatchEvent(event *Event) {
 			this.list = make(map[string]*dispatcher)
 		}
 		if d, ok := this.list[event.Type]; ok {
+			if this.host != nil {
+				event.Target = this.host
+			} else {
+				event.Target = this
+			}
 			d.dispatch(event)
 		}
 	}
