@@ -17,7 +17,7 @@ type Scene struct {
 }
 
 func (this *Scene) Scene() {
-	this.EventDispatcher.EventDispatcher()
+	this.EventDispatcher.EventDispatcher(this)
 
 	this.camera = new(Camera)
 	this.camera.Camera(this, nil)

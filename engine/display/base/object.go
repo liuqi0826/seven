@@ -35,7 +35,7 @@ type Object struct {
 }
 
 func (this *Object) Object() {
-	this.EventDispatcher.EventDispatcher()
+	this.EventDispatcher.EventDispatcher(this)
 
 	this.X = 0
 	this.Y = 0
