@@ -1,6 +1,7 @@
 package network
 
 import (
+	//"fmt"
 	"net"
 	"net/http"
 
@@ -90,8 +91,10 @@ func (this *Listener) listen() {
 	case NETWORK_TYPE_TCP:
 		for {
 			if this.alive {
-				connect, err := this.tcpListener.Accept()
+				conn, err := this.tcpListener.Accept()
 				if err == nil {
+					connect := new(TCPConnection)
+					connect.TCPConnection(conn)
 					nw := new(Network)
 					nw.Network()
 					nw.Create(connect)

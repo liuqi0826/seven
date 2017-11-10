@@ -16,7 +16,9 @@ func TCPConnect(n *Network, addr string) {
 	for {
 		conn, err := net.Dial("tcp", addr)
 		if err == nil {
-			n.Create(conn)
+			connect := new(TCPConnection)
+			connect.TCPConnection(conn)
+			n.Create(connect)
 			break
 		} else {
 			time.Sleep(time.Microsecond * 10)

@@ -108,13 +108,16 @@ func (this *Route) addCallback(index uint16, handle func(*DataStruct)) error {
 	return err
 }
 func (this *Route) onData(ds *DataStruct) {
-	if this != nil {
+	if this != nil && ds != nil {
 		if cb, ok := this.Callback[ds.ReceIndex]; ok {
 			go cb.Handle(ds)
 			delete(this.Callback, ds.ReceIndex)
 			return
 		}
 		if cb, ok := this.Table[ds.Title]; ok {
+			if ds.Title != 0 {
+				fmt.Println("ondata", ds)
+			}
 			go cb.Handle(ds)
 			return
 		} else {
@@ -125,6 +128,8 @@ func (this *Route) onData(ds *DataStruct) {
 				fmt.Println("Route code is: " + fmt.Sprintf("%d", ds.Title))
 			}
 		}
+	} else {
+		fmt.Println("router is nil")
 	}
 }
 func (this *Route) check() {

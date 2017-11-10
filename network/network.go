@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"sync"
 	"time"
@@ -94,6 +93,12 @@ func (this *ChanConnection) Close() error {
 	}
 	return err
 }
+func (this *ChanConnection) GetLocalAddress() string {
+	return "localhost"
+}
+func (this *ChanConnection) GetRemoteAddress() string {
+	return "localhost"
+}
 
 //==================== websocket ====================
 
@@ -165,6 +170,12 @@ func (this *WSConnction) Close() error {
 	}
 	return err
 }
+func (this *WSConnction) GetLocalAddress() string {
+	return this.connect.LocalAddr().String()
+}
+func (this *WSConnction) GetRemoteAddress() string {
+	return this.connect.RemoteAddr().String()
+}
 func (this *WSConnction) readListen() {
 	for this != nil && this.alive {
 		_, msg, err := this.connect.ReadMessage()
@@ -197,14 +208,13 @@ type TCPConnection struct {
 	headRead   bool
 	packageLen uint32
 	buffer     []byte
-	connect    net.TCPConn
+	connect    net.Conn
 	readBuf    chan []byte
 	writeBuf   chan []byte
 }
 
-func (this *TCPConnection) TCPConnection(connect net.TCPConn) {
+func (this *TCPConnection) TCPConnection(connect net.Conn) {
 	this.alive = true
-	this.buffer = make([]byte, 2048)
 	this.connect = connect
 	this.readBuf = make(chan []byte, 32)
 	this.writeBuf = make(chan []byte, 32)
@@ -262,30 +272,38 @@ func (this *TCPConnection) Close() error {
 	err = this.connect.Close()
 	return err
 }
+func (this *TCPConnection) GetLocalAddress() string {
+	return this.connect.LocalAddr().String()
+}
+func (this *TCPConnection) GetRemoteAddress() string {
+	return this.connect.RemoteAddr().String()
+}
 func (this *TCPConnection) readListen() {
 	for this != nil && this.alive {
 		buffer := make([]byte, 2048)
 		length, err := this.connect.Read(buffer)
 		if err == nil {
-			this.Lock()
-			defer this.Unlock()
 			this.buffer = append(this.buffer, buffer[:length]...)
-			if this.headRead {
-				if len(this.buffer) >= int(this.packageLen) {
-					this.headRead = false
-					data := this.buffer[:this.packageLen]
-					this.buffer = this.buffer[this.packageLen:len(this.buffer)]
-					this.writeBuf <- data
+			for {
+				if this.headRead {
+					if len(this.buffer) >= int(this.packageLen) {
+						this.headRead = false
+						data := bytes.NewBuffer(this.buffer[:this.packageLen])
+						this.buffer = this.buffer[this.packageLen:len(this.buffer)]
+						this.readBuf <- data.Bytes()
+					} else {
+						break
+					}
 				} else {
-					break
-				}
-			} else {
-				if len(this.buffer) >= 4 {
-					lenBuffer := bytes.NewBuffer(this.buffer[0:4])
-					err = binary.Read(lenBuffer, binary.BigEndian, &this.packageLen)
-					utils.ErrorHandle("Read len", err)
-					this.headRead = true
-					this.buffer = this.buffer[4:len(this.buffer)]
+					if len(this.buffer) >= 4 {
+						lenBuffer := bytes.NewBuffer(this.buffer[0:4])
+						err = binary.Read(lenBuffer, binary.BigEndian, &this.packageLen)
+						utils.ErrorHandle("Read len", err)
+						this.headRead = true
+						this.buffer = this.buffer[4:len(this.buffer)]
+					} else {
+						break
+					}
 				}
 			}
 		} else {
@@ -318,22 +336,27 @@ type Network struct {
 	deadline    int64
 	markTime    int64
 
+	localAddress  string
+	remoteAddress string
+
 	router  *Route
-	connect io.ReadWriteCloser
+	connect IConnect
 }
 
 func (this *Network) Network() {
+	this.EventDispatcher.EventDispatcher(this)
 	this.router = new(Route)
 	this.router.Route()
 	this.router.addHandle(uint16(0), this.pong)
-	this.EventDispatcher.EventDispatcher()
 	this.deadline = 60
 }
-func (this *Network) Create(conn io.ReadWriteCloser) {
+func (this *Network) Create(conn IConnect) {
 	this.alive = true
-	this.connect = conn
 	this.index = 0
 	this.createTime = time.Now().Unix()
+	this.connect = conn
+	this.localAddress = this.connect.GetLocalAddress()
+	this.remoteAddress = this.connect.GetRemoteAddress()
 
 	go this.listen()
 
@@ -359,9 +382,15 @@ func (this *Network) GetConnectType() string {
 	}
 	return ""
 }
+func (this *Network) GetLocalAddress() string {
+	return this.localAddress
+}
+func (this *Network) GetRemoteAddress() string {
+	return this.remoteAddress
+}
 func (this *Network) SetHeartBeat(interval time.Duration) error {
 	var err error
-	if this != nil && this.alive && this.connect != nil {
+	if this != nil {
 		go func() {
 			for {
 				if this != nil && this.alive && this.connect != nil {
@@ -430,7 +459,7 @@ func (this *Network) SendSafely(data *DataStruct) error {
 }
 func (this *Network) AddHandle(title uint16, handle func(*DataStruct)) error {
 	var err error
-	if this != nil && this.alive && this.connect != nil {
+	if this != nil {
 		err = this.router.addHandle(title, handle)
 	} else {
 		err = errors.New("Network is closed!")
@@ -439,7 +468,7 @@ func (this *Network) AddHandle(title uint16, handle func(*DataStruct)) error {
 }
 func (this *Network) SetDefaultHandle(defun func(*DataStruct)) error {
 	var err error
-	if this != nil && this.alive && this.connect != nil {
+	if this != nil {
 		this.router.setDefaultHandle(defun)
 	} else {
 		err = errors.New("Network is closed!")
@@ -448,7 +477,7 @@ func (this *Network) SetDefaultHandle(defun func(*DataStruct)) error {
 }
 func (this *Network) RemoveHandle(title uint16) error {
 	var err error
-	if this != nil && this.alive && this.connect != nil {
+	if this != nil {
 		err = this.router.removeHandle(title)
 	} else {
 		err = errors.New("Network is closed!")
@@ -457,7 +486,7 @@ func (this *Network) RemoveHandle(title uint16) error {
 }
 func (this *Network) RemoveAllHandle() error {
 	var err error
-	if this != nil && this.alive && this.connect != nil {
+	if this != nil {
 		err = this.router.removeAllHandle()
 	} else {
 		err = errors.New("Network is closed!")
