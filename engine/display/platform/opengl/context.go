@@ -7,6 +7,7 @@ import (
 
 	"github.com/liuqi0826/seven/engine/display/platform"
 	"github.com/liuqi0826/seven/engine/utils"
+	"github.com/liuqi0826/seven/events"
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 )
 
@@ -30,6 +31,8 @@ const (
 )
 
 type Context struct {
+	events.EventDispatcher
+
 	config               *utils.Config
 	window               *glfw.Window
 	currentShaderProgram *Program3D
@@ -48,6 +51,8 @@ type Context struct {
 
 func (this *Context) Setup(config *utils.Config) error {
 	var err error
+
+	this.EventDispatcher.EventDispatcher(this)
 
 	this.config = config
 	this.debug = config.Debug
@@ -159,13 +164,17 @@ func (this *Context) SetDepthTest(depthMask bool, passCompareMode string) {
 		}
 		switch this.passCompareMode {
 		case ALWAYS:
+			gl.DepthFunc(gl.ALWAYS)
 		case EQUAL:
+			gl.DepthFunc(gl.EQUAL)
 		case GREATER:
+			gl.DepthFunc(gl.GREATER)
 		case GREATER_EQUAL:
 		case LESS:
 			gl.DepthFunc(gl.LESS)
 		case LESS_EQUAL:
 		case NEVER:
+			gl.DepthFunc(gl.NEVER)
 		case NOT_EQUAL:
 		}
 	}
@@ -224,4 +233,19 @@ func (this *Context) SetVertexBufferAt(value string, stride int32, bufferOffset 
 }
 func (this *Context) ShouldClose() bool {
 	return this.window.ShouldClose()
+}
+
+func (this *Context) keyboardCallback() {
+}
+func (this *Context) mouseButtonCallback() {
+}
+func (this *Context) cursorPositionCallback() {
+}
+func (this *Context) frameBufferSizeCallback() {
+}
+func (this *Context) scrollCallback() {
+}
+func (this *Context) makeContextCurrentCallback() {
+}
+func (this *Context) resizeCallback() {
 }

@@ -136,7 +136,6 @@ func (this *Runtime) action() {
 	this.Unlock()
 }
 func (this *Runtime) frame() {
-	glfw.PollEvents()
 	if global.Context3D.ShouldClose() {
 		this.Alive = false
 	}
@@ -156,4 +155,6 @@ func (this *Runtime) frame() {
 	if itv < this.config.FrameInterval {
 		time.Sleep(time.Nanosecond * time.Duration(this.config.FrameInterval-itv))
 	}
+
+	glfw.PollEvents()
 }

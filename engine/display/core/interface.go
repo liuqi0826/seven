@@ -9,6 +9,8 @@ import (
 )
 
 type IContext interface {
+	events.IEventDispatcher
+
 	Setup(config *utils.Config) error
 	Clear(color bool, depth bool, stencil bool)
 	CreateProgram() platform.IProgram3D
