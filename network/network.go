@@ -265,11 +265,15 @@ func (this *TCPConnection) Close() error {
 	var err error
 	this.Lock()
 	defer this.Unlock()
-	this.alive = false
-	close(this.readBuf)
-	close(this.writeBuf)
-	fmt.Println("TCP close: " + fmt.Sprintf("%s", this.connect.RemoteAddr()))
-	err = this.connect.Close()
+	if this.alive {
+		this.alive = false
+		close(this.readBuf)
+		close(this.writeBuf)
+		fmt.Println("TCP close: " + fmt.Sprintf("%s", this.connect.RemoteAddr()))
+		err = this.connect.Close()
+	} else {
+		err = errors.New("TCP closed!")
+	}
 	return err
 }
 func (this *TCPConnection) GetLocalAddress() string {
