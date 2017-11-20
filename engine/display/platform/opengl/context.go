@@ -6,7 +6,6 @@ import (
 	"github.com/go-gl/gl/v4.5-core/gl"
 
 	"github.com/liuqi0826/seven/engine/display/platform"
-	"github.com/liuqi0826/seven/engine/utils"
 	"github.com/liuqi0826/seven/events"
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 )
@@ -33,7 +32,6 @@ const (
 type Context struct {
 	events.EventDispatcher
 
-	config               *utils.Config
 	window               *glfw.Window
 	currentShaderProgram *Program3D
 
@@ -49,30 +47,13 @@ type Context struct {
 	passCompareMode string
 }
 
-func (this *Context) Setup(config *utils.Config) error {
+func (this *Context) Setup(window *glfw.Window, debug bool) error {
 	var err error
 
 	this.EventDispatcher.EventDispatcher(this)
 
-	this.config = config
-	this.debug = config.Debug
-
-	glfw.WindowHint(glfw.Resizable, glfw.False)
-	//glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	//glfw.WindowHint(glfw.ContextVersionMinor, 5)
-	//glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	//glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-
-	this.window, err = glfw.CreateWindow(this.config.WindowWidth, this.config.WindowHeight, this.config.WindowTitle, nil, nil)
-	if err != nil {
-		return err
-	}
-	this.window.MakeContextCurrent()
-
-	this.window.SetKeyCallback(this.keyboardCallback)
-	this.window.SetMouseButtonCallback(this.mouseButtonCallback)
-	this.window.SetCursorPosCallback(this.cursorPositionCallback)
-	this.window.SetSizeCallback(this.resizeCallback)
+	this.window = window
+	this.debug = debug
 
 	err = gl.Init()
 	if err != nil {
@@ -89,9 +70,6 @@ func (this *Context) Setup(config *utils.Config) error {
 	this.ready = true
 
 	return err
-}
-func (this *Context) GetWindow() *glfw.Window {
-	return this.window
 }
 func (this *Context) Clear(color bool, depth bool, stencil bool) {
 	var mask uint32
@@ -235,29 +213,4 @@ func (this *Context) SetVertexBufferAt(value string, stride int32, bufferOffset 
 		gl.EnableVertexAttribArray(attrib)
 		gl.VertexAttribPointer(attrib, size, xtype, false, stride, gl.PtrOffset(bufferOffset))
 	}
-}
-func (this *Context) ShouldClose() bool {
-	return this.window.ShouldClose()
-}
-
-func (this *Context) keyboardCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if action == glfw.Repeat {
-		return
-	}
-	fmt.Println(key, scancode, action, mods)
-}
-func (this *Context) mouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action glfw.Action, mod glfw.ModifierKey) {
-	fmt.Println(button, action, mod)
-}
-func (this *Context) cursorPositionCallback(window *glfw.Window, x float64, y float64) {
-	fmt.Println(x, y)
-}
-func (this *Context) frameBufferSizeCallback() {
-}
-func (this *Context) scrollCallback() {
-}
-func (this *Context) makeContextCurrentCallback() {
-}
-func (this *Context) resizeCallback(window *glfw.Window, width int, height int) {
-	fmt.Println(width, height)
 }

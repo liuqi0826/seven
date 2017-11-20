@@ -9,40 +9,39 @@ import (
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 
 	"github.com/liuqi0826/seven/engine/display"
+	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/platform/opengl"
 	//"github.com/liuqi0826/seven/engine/display/platform/vulkan"
 	"github.com/liuqi0826/seven/engine/global"
+	"github.com/liuqi0826/seven/engine/input"
 	"github.com/liuqi0826/seven/engine/resource"
 	"github.com/liuqi0826/seven/engine/static"
 	"github.com/liuqi0826/seven/engine/utils"
 	"github.com/liuqi0826/seven/events"
 )
 
-var Instance *Runtime
+var Runtime *Engine
 
 func init() {
 	runtime.LockOSThread()
 
-	Instance = new(Runtime)
-	Instance.Runtime()
-}
-
-func check(title string, err error) {
-	if err != nil {
-		fmt.Println(title, err)
-	}
+	Runtime = new(Engine)
+	Runtime.Engine()
 }
 
 //++++++++++++++++++++ Runtime ++++++++++++++++++++
 
-type Runtime struct {
+type Engine struct {
 	events.EventDispatcher
 	sync.Mutex
 
 	Alive bool
 	Ready bool
 
-	ViewPort display.Viewport
+	Window          *glfw.Window
+	Stage           *Stage
+	KeyboardManager *input.KeyboardManager
+	MouseManager    *input.MouseManager
 
 	config        *utils.Config
 	instanceIndex uint32
@@ -50,11 +49,11 @@ type Runtime struct {
 	actionList []func()
 }
 
-func (this *Runtime) Runtime() {
+func (this *Engine) Engine() {
 	this.instanceIndex = 0
 	this.actionList = make([]func(), 0)
 }
-func (this *Runtime) Setup(config *utils.Config) error {
+func (this *Engine) Setup(config *utils.Config) error {
 	var err error
 	this.config = config
 
@@ -67,7 +66,24 @@ func (this *Runtime) Setup(config *utils.Config) error {
 	static.WindowY = this.config.WindowY
 
 	err = glfw.Init()
-	check("glfw", err)
+	if err != nil {
+		return err
+	}
+
+	glfw.WindowHint(glfw.Resizable, glfw.False)
+	//glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	//glfw.WindowHint(glfw.ContextVersionMinor, 5)
+	//glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	//glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+
+	this.Window, err = glfw.CreateWindow(this.config.WindowWidth, this.config.WindowHeight, this.config.WindowTitle, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	this.Window.SetSizeCallback(this.resizeCallback)
+
+	this.Window.MakeContextCurrent()
 
 	switch this.config.API {
 	case static.GL:
@@ -77,8 +93,13 @@ func (this *Runtime) Setup(config *utils.Config) error {
 	case static.D3D12:
 	}
 
-	err = global.Context3D.Setup(this.config)
-	check("context", err)
+	err = global.Context3D.Setup(this.Window, this.config.Debug)
+	utils.Check("context", err)
+
+	this.KeyboardManager = new(input.KeyboardManager)
+	this.KeyboardManager.Setup(this.Window)
+	this.MouseManager = new(input.MouseManager)
+	this.MouseManager.Setup(this.Window)
 
 	global.ResourceManager = new(resource.ResourceManager)
 	global.ResourceManager.Setup(global.Context3D)
@@ -91,43 +112,38 @@ func (this *Runtime) Setup(config *utils.Config) error {
 	this.DispatchEvent(event)
 	return err
 }
-func (this *Runtime) GetNextInstanceID() string {
+func (this *Engine) GetNextInstanceID() string {
 	this.instanceIndex++
 	return fmt.Sprintf("%d", this.instanceIndex)
 }
-func (this *Runtime) Start() {
+func (this *Engine) Start() {
 	if this.Ready {
 		this.Alive = true
 		if this.config.FrameInterval == 0 {
 			this.config.FrameInterval = static.FPS60
 		}
-		this.ViewPort = display.Viewport{}
-		this.ViewPort.Viewport(uint32(this.config.WindowWidth), uint32(this.config.WindowHeight), static.FORWARD)
+
+		this.Stage = new(Stage)
+		this.Stage.setup(this)
 
 		for this.Alive {
 			this.frame()
 		}
 	}
 }
-func (this *Runtime) Stop() {
+func (this *Engine) Stop() {
 	this.Alive = false
 }
-func (this *Runtime) Destroy() {
+func (this *Engine) Destroy() {
 	glfw.Terminate()
 }
-func (this *Runtime) StageWidth() int32 {
-	return int32(this.config.WindowWidth)
-}
-func (this *Runtime) StageHeight() int32 {
-	return int32(this.config.WindowHeight)
-}
 
-func (this *Runtime) onResourceEvent(event *events.Event) {
+func (this *Engine) onResourceEvent(event *events.Event) {
 	if fun, ok := event.Data.(func()); ok {
 		this.actionList = append(this.actionList, fun)
 	}
 }
-func (this *Runtime) action() {
+func (this *Engine) action() {
 	this.Lock()
 	for _, fun := range this.actionList {
 		fun()
@@ -135,20 +151,15 @@ func (this *Runtime) action() {
 	this.actionList = make([]func(), 0)
 	this.Unlock()
 }
-func (this *Runtime) frame() {
-	if global.Context3D.ShouldClose() {
+func (this *Engine) frame() {
+	if this.Window.ShouldClose() {
 		this.Alive = false
 	}
 
 	begin := time.Now().UnixNano()
 
-	event := new(events.Event)
-	event.Type = events.ENTER_FRAME
-	this.DispatchEvent(event)
-
 	this.action()
-
-	this.ViewPort.Frame()
+	this.Stage.frame()
 
 	end := time.Now().UnixNano()
 	itv := time.Duration(end - begin)
@@ -157,4 +168,53 @@ func (this *Runtime) frame() {
 	}
 
 	glfw.PollEvents()
+}
+
+func (this *Engine) frameBufferSizeCallback() {
+}
+func (this *Engine) scrollCallback() {
+}
+func (this *Engine) makeContextCurrentCallback() {
+}
+func (this *Engine) resizeCallback(window *glfw.Window, width int, height int) {
+	fmt.Println(width, height)
+}
+
+//++++++++++++++++++++ Stage ++++++++++++++++++++
+
+type Stage struct {
+	events.EventDispatcher
+
+	engine *Engine
+	view   display.Viewport
+}
+
+func (this *Stage) AddChild(displayObject core.IDisplayObject) {
+	this.view.Scene.AddChild(displayObject)
+}
+func (this *Stage) RemoveChild(displayObject core.IDisplayObject) core.IDisplayObject {
+	return this.view.Scene.RemoveChild(displayObject)
+}
+func (this *Stage) StageWidth() int32 {
+	return int32(this.engine.config.WindowWidth)
+}
+func (this *Stage) StageHeight() int32 {
+	return int32(this.engine.config.WindowHeight)
+}
+func (this *Stage) setup(engine *Engine) {
+	this.EventDispatcher.EventDispatcher(this)
+	this.engine = engine
+	this.view = display.Viewport{}
+	this.view.Viewport(uint32(this.engine.config.WindowWidth), uint32(this.engine.config.WindowHeight), static.FORWARD)
+
+	event := new(events.Event)
+	event.Type = events.INIT
+	this.DispatchEvent(event)
+}
+func (this *Stage) frame() {
+	event := new(events.Event)
+	event.Type = events.ENTER_FRAME
+	this.DispatchEvent(event)
+
+	this.view.Frame()
 }

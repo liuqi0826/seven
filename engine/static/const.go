@@ -17,6 +17,7 @@ const (
 	GL     = "gl"
 	VULKAN = "vulkan"
 	D3D9   = "d3d9"
+	D3D11  = "d3d11"
 	D3D12  = "d3d12"
 )
 
