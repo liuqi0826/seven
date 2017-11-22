@@ -38,6 +38,9 @@ const (
 	ROLL_OUT          = "rollOut"
 	ROLL_OVER         = "rollOver"
 
+	KEY_DOWN = "keyDown"
+	KEY_UP   = "keyUp"
+
 	ERROR    = "error"
 	IO_ERROR = "ioError"
 )
