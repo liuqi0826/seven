@@ -1,3 +1,0 @@
-package skeleton
-
-import ()

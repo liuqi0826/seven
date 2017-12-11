@@ -13,6 +13,9 @@ func CreateRender(id string) core.IRenderer {
 		case "default":
 			renderer := new(opengl.DefaultRender)
 			return renderer
+		case "animation":
+			renderer := new(opengl.AnimationRender)
+			return renderer
 		}
 	case static.VULKAN:
 	case static.D3D9:

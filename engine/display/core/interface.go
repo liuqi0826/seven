@@ -36,13 +36,13 @@ type IRenderer interface {
 	Setup(camera ICamera, program3D platform.IProgram3D)
 	SetCamera(camera ICamera)
 	SetProgram(program platform.IProgram3D)
+	SetValue(title string, value []float32)
 	Render(renderable IRenderable)
 }
 
 type IRenderable interface {
 	GetIndexBuffer() platform.IIndexBuffer
 	GetVertexBuffer() *[8]platform.IVertexBuffer
-	GetValueBuffer() []float32
 }
 
 type IEntity interface {
@@ -76,4 +76,9 @@ type IContainer interface {
 	RemoveAllChildren()
 	GetChildByName(name string) IDisplayObject
 	GetChildrenNumber() int32
+}
+
+type IAnimation interface {
+	GetType() string
+	Update()
 }

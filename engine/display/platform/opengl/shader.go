@@ -125,4 +125,38 @@ func init() {
 	}
 	` + "\x00"
 
+	ShaderResource["skeleton_matrix"] = new(resource.ShaderResource)
+	ShaderResource["skeleton_matrix"].ID = "skeleton_matrix"
+	ShaderResource["skeleton_matrix"].Vertex = `
+	#version 420
+	uniform mat4 projection;
+	uniform mat4 transform;
+	uniform mat4 camera;
+	uniform mat4 mtx1;
+	uniform mat4 mtx2;
+	uniform mat4 mtx3;
+	uniform mat4 mtx4;
+	in vec3 position;
+	in vec2 texcoord;
+	in vec3 normal;
+	out vec2 vtc;
+	out vec3 vn;
+	void main() {
+		vtc = texcoord;
+		vn = normal;
+		gl_Position = projection * camera * transform * vec4(position, 1.0);
+	}
+	` + "\x00"
+	ShaderResource["skeleton_matrix"].Fragment = `
+	#version 420
+	layout (binding = 0) uniform sampler2D tex;
+	in vec2 vtc;
+	in vec3 vn;
+	vec4 color;
+	void main() {
+		color = texture(tex, vtc);
+		//color.rgb = color.rgb + vn.rgb;
+		gl_FragColor = color;
+	}
+	` + "\x00"
 }

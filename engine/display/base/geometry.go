@@ -6,7 +6,6 @@ import (
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/platform"
 	"github.com/liuqi0826/seven/engine/display/resource"
-	"github.com/liuqi0826/seven/geom"
 )
 
 type SubGeometry struct {
@@ -16,9 +15,6 @@ type SubGeometry struct {
 
 	IndexBuffer  platform.IIndexBuffer
 	VertexBuffer [8]platform.IVertexBuffer
-	ValueBuffer  []float32
-
-	transform *geom.Matrix4x4
 
 	geometryResource *resource.GeometryResource
 }
@@ -29,9 +25,6 @@ func (this *SubGeometry) SubGeometry(geometryResource *resource.GeometryResource
 	} else {
 		fmt.Println("GeometryResource is nil.")
 	}
-}
-func (this *SubGeometry) Update(transform *geom.Matrix4x4) {
-	this.transform = transform
 }
 func (this *SubGeometry) Upload(context core.IContext) error {
 	var err error
@@ -63,16 +56,6 @@ func (this *SubGeometry) GetIndexBuffer() platform.IIndexBuffer {
 }
 func (this *SubGeometry) GetVertexBuffer() *[8]platform.IVertexBuffer {
 	return &this.VertexBuffer
-}
-func (this *SubGeometry) GetValueBuffer() []float32 {
-	this.ValueBuffer = make([]float32, 0)
-	if this.transform != nil {
-		raw := this.transform.GetRaw()
-		for _, v := range raw {
-			this.ValueBuffer = append(this.ValueBuffer, v)
-		}
-	}
-	return this.ValueBuffer
 }
 func (this *SubGeometry) Dispose() {
 	this.Uploaded = false

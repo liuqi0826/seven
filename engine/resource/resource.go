@@ -23,8 +23,9 @@ type ResourceManager struct {
 	context3D core.IContext
 	//静态资源库
 	geometryResource  map[string]*resource.GeometryResource
+	skeletonResource  map[string]*resource.SkeletonResource
 	materialResource  map[string]*resource.MaterialResource
-	animationResource map[string]*resource.AnimationResource
+	animationResource map[string]*resource.AnimationClipResource
 	shaderResource    map[string]*resource.ShaderResource
 
 	//运行时资源
@@ -42,8 +43,9 @@ func (this *ResourceManager) Setup(context core.IContext) error {
 	}
 
 	this.geometryResource = make(map[string]*resource.GeometryResource)
+	this.skeletonResource = make(map[string]*resource.SkeletonResource)
 	this.materialResource = make(map[string]*resource.MaterialResource)
-	this.animationResource = make(map[string]*resource.AnimationResource)
+	this.animationResource = make(map[string]*resource.AnimationClipResource)
 	this.shaderResource = make(map[string]*resource.ShaderResource)
 
 	this.geometryRuntime = make(map[string]*base.SubGeometry)
@@ -67,6 +69,19 @@ func (this *ResourceManager) LoadGeometrie(file string) error {
 	}
 	return err
 }
+func (this *ResourceManager) LoadSkeleton(file string) error {
+	var err error
+	res, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		id := this.ParserSkeleton(res)
+		if id != "" {
+			fmt.Println("Load Skeleton " + id)
+		}
+	}
+	return err
+}
 func (this *ResourceManager) LoadMaterial(file string) error {
 	var err error
 	res, err := ioutil.ReadFile(file)
@@ -80,13 +95,13 @@ func (this *ResourceManager) LoadMaterial(file string) error {
 	}
 	return err
 }
-func (this *ResourceManager) LoadAnimation(file string) error {
+func (this *ResourceManager) LoadAnimationClip(file string) error {
 	var err error
 	res, err := ioutil.ReadFile(file)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		id := this.ParserAnimation(res)
+		id := this.ParserAnimationClip(res)
 		if id != "" {
 			fmt.Println("Load Animation " + id)
 		}
@@ -117,6 +132,17 @@ func (this *ResourceManager) ParserGeometrie(value []byte) string {
 	}
 	return ""
 }
+func (this *ResourceManager) ParserSkeleton(value []byte) string {
+	sk := new(resource.SkeletonResource)
+	err := sk.Parser(value)
+	if err == nil {
+		this.AddSkeleton(sk)
+		return sk.ID
+	} else {
+		fmt.Println(err)
+	}
+	return ""
+}
 func (this *ResourceManager) ParserMaterial(value []byte) string {
 	mt := new(resource.MaterialResource)
 	err := mt.Parser(value)
@@ -128,11 +154,11 @@ func (this *ResourceManager) ParserMaterial(value []byte) string {
 	}
 	return ""
 }
-func (this *ResourceManager) ParserAnimation(value []byte) string {
-	am := new(resource.AnimationResource)
+func (this *ResourceManager) ParserAnimationClip(value []byte) string {
+	am := new(resource.AnimationClipResource)
 	err := am.Parser(value)
 	if err == nil {
-		this.AddAnimation(am)
+		this.AddAnimationClip(am)
 		return am.ID
 	} else {
 		fmt.Println(err)
@@ -160,8 +186,16 @@ func (this *ResourceManager) GetGeometrie(id string) *resource.GeometryResource 
 	}
 	return nil
 }
+func (this *ResourceManager) AddSkeleton(value *resource.SkeletonResource) {
+	this.skeletonResource[value.ID] = value
+}
+func (this *ResourceManager) GetSkeleton(id string) *resource.SkeletonResource {
+	if sk, ok := this.skeletonResource[id]; ok {
+		return sk
+	}
+	return nil
+}
 func (this *ResourceManager) AddMaterial(value *resource.MaterialResource) {
-	fmt.Println("AddMaterial", value.ID)
 	this.materialResource[value.ID] = value
 }
 func (this *ResourceManager) GetMaterial(id string) *resource.MaterialResource {
@@ -170,9 +204,13 @@ func (this *ResourceManager) GetMaterial(id string) *resource.MaterialResource {
 	}
 	return nil
 }
-func (this *ResourceManager) AddAnimation(value *resource.AnimationResource) {
+func (this *ResourceManager) AddAnimationClip(value *resource.AnimationClipResource) {
+	this.animationResource[value.ID] = value
 }
-func (this *ResourceManager) GetAnimation(id string) *resource.AnimationResource {
+func (this *ResourceManager) GetAnimationClip(id string) *resource.AnimationClipResource {
+	if an, ok := this.animationResource[id]; ok {
+		return an
+	}
 	return nil
 }
 func (this *ResourceManager) AddShader(value *resource.ShaderResource) {

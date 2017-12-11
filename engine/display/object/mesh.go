@@ -39,10 +39,7 @@ func (this *Mesh) Update(transform *geom.Matrix4x4) {
 	this.Object.Update()
 	this.Object.GetTransform().Append(transform)
 
-	mtx := this.Object.GetTransform()
-	for _, v := range this.geometry {
-		v.Update(mtx)
-	}
+	this.renderer.SetValue("transform", this.Object.GetTransform().GetRawSlice())
 }
 func (this *Mesh) Render() {
 	if this.renderer != nil {
