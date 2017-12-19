@@ -17,6 +17,15 @@ func CreateOrtho(width float32, height float32, zNear float32, zFar float32) Mat
 	mtx.Matrix4x4(&[16]float32{2.0 / width, 0, 0, 0, 0, 2.0 / height, 0, 0, 0, 0, 1 / (zFar - zNear), zNear / (zNear - zFar), 0, 0, 0, 1})
 	return mtx
 }
+func InterpolateMatrix4x4(m1 *Matrix4x4, m2 *Matrix4x4, percent float32) *Matrix4x4 {
+	arr := [16]float32{}
+	for i := 0; i < 16; i++ {
+		arr[i] = m1.raw[i] + (m2.raw[i]-m1.raw[i])*percent
+	}
+	mtx := new(Matrix4x4)
+	mtx.Matrix4x4(&arr)
+	return mtx
+}
 
 type Matrix4x4 struct {
 	raw [16]float32
@@ -379,6 +388,10 @@ func (this *Matrix4x4) Position() *Vector4 {
 }
 func (this *Matrix4x4) GetRaw() [16]float32 {
 	raw := [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
+	return raw
+}
+func (this *Matrix4x4) GetRawSlice() []float32 {
+	raw := []float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
 	return raw
 }
 func (this *Matrix4x4) Clone() Matrix4x4 {
