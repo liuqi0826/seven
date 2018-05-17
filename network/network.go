@@ -416,6 +416,15 @@ func (this *Network) SetHeartBeat(interval time.Duration) error {
 func (this *Network) Send(data *DataStruct) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
+		this.flush(data)
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
+}
+func (this *Network) SendWithAsyn(data *DataStruct) error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
 		go this.flush(data)
 	} else {
 		err = errors.New("Network is closed!")
@@ -440,6 +449,26 @@ func (this *Network) SendWithCallback(data *DataStruct, handle func(*DataStruct)
 	return err
 }
 func (this *Network) SendSafely(data *DataStruct) error {
+	var err error
+	if this != nil && this.alive && this.connect != nil {
+		var count int = 0
+		for {
+			length, err := this.flush(data)
+			if length > 0 && err == nil {
+				break
+			}
+			count++
+			if count >= 100 {
+				break
+			}
+			time.Sleep(DELAY)
+		}
+	} else {
+		err = errors.New("Network is closed!")
+	}
+	return err
+}
+func (this *Network) SendSafelyWithAsyn(data *DataStruct) error {
 	var err error
 	if this != nil && this.alive && this.connect != nil {
 		go func() {
@@ -515,6 +544,15 @@ func (this *Network) Close() error {
 		err = errors.New("Network is closed!")
 	}
 	return err
+}
+func (this *Network) CloseWithDelay(delay time.Duration) {
+	go func() {
+		time.Sleep(delay)
+		err := this.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 }
 func (this *Network) listen() {
 	for this != nil && this.alive {
