@@ -1,7 +1,7 @@
 package network
 
 import (
-	//"fmt"
+	// "fmt"
 	"net"
 	"net/http"
 
@@ -118,6 +118,10 @@ func (this *Listener) onWebsocket(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		wsc := new(WSConnction)
 		wsc.WSConnction(ws)
+		err = r.ParseForm()
+		if err == nil {
+			wsc.Values = r.Form
+		}
 		nw := new(Network)
 		nw.Network()
 		nw.Create(wsc)

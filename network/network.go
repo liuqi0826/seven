@@ -105,6 +105,8 @@ func (this *ChanConnection) GetRemoteAddress() string {
 type WSConnction struct {
 	sync.Mutex
 
+	Values map[string][]string
+
 	alive    bool
 	connect  *websocket.Conn
 	readBuf  chan []byte
@@ -379,6 +381,9 @@ func (this *Network) GetCreateTime() int64 {
 		return this.createTime
 	}
 	return 0
+}
+func (this *Network) GetConnect() interface{} {
+	return this.connect
 }
 func (this *Network) GetConnectType() string {
 	if this != nil && this.alive && this.connect != nil {
