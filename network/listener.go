@@ -1,9 +1,10 @@
 package network
 
 import (
-	// "fmt"
+	//"fmt"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/liuqi0826/seven/utils"
@@ -18,12 +19,13 @@ type Listener struct {
 	networkChan chan *Network
 	netType     string
 	address     string
+	pattern     string
 }
 
 func (this *Listener) Listener() {
 	this.networkChan = make(chan *Network, 0)
 }
-func (this *Listener) Listen(netType string, address string) error {
+func (this *Listener) Listen(netType string, address string, extra interface{}) error {
 	var err error
 	this.alive = true
 	this.netType = netType
@@ -39,6 +41,17 @@ func (this *Listener) Listen(netType string, address string) error {
 		utils.ErrorHandle("Listener ListenTCP...", err)
 	case NETWORK_TYPE_UDP:
 	case NETWORK_TYPE_WEB_SOCKET:
+		if u, ok := extra.(string); ok {
+			if u == "" {
+				this.pattern = "/"
+			} else if strings.Index(u, "/") < 0 {
+				this.pattern = "/" + u
+			} else {
+				this.pattern = u
+			}
+		} else {
+			this.pattern = "/"
+		}
 		this.upgrader = new(websocket.Upgrader)
 		this.upgrader.ReadBufferSize = 2048
 		this.upgrader.WriteBufferSize = 2048
@@ -109,7 +122,7 @@ func (this *Listener) listen() {
 		}
 	case NETWORK_TYPE_UDP:
 	case NETWORK_TYPE_WEB_SOCKET:
-		http.HandleFunc("/", this.onWebsocket)
+		http.HandleFunc(this.pattern, this.onWebsocket)
 		http.ListenAndServe(this.address, nil)
 	}
 }
