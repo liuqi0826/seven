@@ -20,7 +20,7 @@ func CreateOrtho(width float32, height float32, zNear float32, zFar float32) Mat
 func InterpolateMatrix4x4(m1 *Matrix4x4, m2 *Matrix4x4, percent float32) *Matrix4x4 {
 	arr := [16]float32{}
 	for i := 0; i < 16; i++ {
-		arr[i] = m1.raw[i] + (m2.raw[i]-m1.raw[i])*percent
+		arr[i] = m1.Raw[i] + (m2.Raw[i]-m1.Raw[i])*percent
 	}
 	mtx := new(Matrix4x4)
 	mtx.Matrix4x4(&arr)
@@ -28,23 +28,23 @@ func InterpolateMatrix4x4(m1 *Matrix4x4, m2 *Matrix4x4, percent float32) *Matrix
 }
 
 type Matrix4x4 struct {
-	raw [16]float32
+	Raw [16]float32
 }
 
 func (this *Matrix4x4) Matrix4x4(raw *[16]float32) {
 	if raw != nil {
 		for idx, v := range raw {
-			this.raw[idx] = v
+			this.Raw[idx] = v
 		}
 	} else {
 		this.Identity()
 	}
 }
 func (this *Matrix4x4) Identity() {
-	this.raw = [16]float32{1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
+	this.Raw = [16]float32{1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
 }
 func (this *Matrix4x4) Transpose() {
-	raw := [16]float32{this.raw[0], this.raw[4], this.raw[8], this.raw[12], this.raw[1], this.raw[5], this.raw[9], this.raw[13], this.raw[2], this.raw[6], this.raw[10], this.raw[14], this.raw[3], this.raw[7], this.raw[11], this.raw[15]}
+	raw := [16]float32{this.Raw[0], this.Raw[4], this.Raw[8], this.Raw[12], this.Raw[1], this.Raw[5], this.Raw[9], this.Raw[13], this.Raw[2], this.Raw[6], this.Raw[10], this.Raw[14], this.Raw[3], this.Raw[7], this.Raw[11], this.Raw[15]}
 	this.Matrix4x4(&raw)
 }
 func (this *Matrix4x4) Invert() bool {
@@ -52,22 +52,22 @@ func (this *Matrix4x4) Invert() bool {
 	if math.Abs(float64(d)) > 0.00000000001 {
 		d = 1 / d
 		data := this.GetRaw()
-		this.raw[0] = d * (data[5]*(data[10]*data[15]-data[14]*data[11]) - data[9]*(data[6]*data[15]-data[14]*data[7]) + data[13]*(data[6]*data[11]-data[10]*data[7]))
-		this.raw[1] = -d * (data[1]*(data[10]*data[15]-data[14]*data[11]) - data[9]*(data[2]*data[15]-data[14]*data[3]) + data[13]*(data[2]*data[11]-data[10]*data[3]))
-		this.raw[2] = d * (data[1]*(data[6]*data[15]-data[14]*data[7]) - data[5]*(data[2]*data[15]-data[14]*data[3]) + data[13]*(data[2]*data[7]-data[6]*data[3]))
-		this.raw[3] = -d * (data[1]*(data[6]*data[11]-data[10]*data[7]) - data[5]*(data[2]*data[11]-data[10]*data[3]) + data[9]*(data[2]*data[7]-data[6]*data[3]))
-		this.raw[4] = -d * (data[4]*(data[10]*data[15]-data[14]*data[11]) - data[8]*(data[6]*data[15]-data[14]*data[7]) + data[12]*(data[6]*data[11]-data[10]*data[7]))
-		this.raw[5] = d * (data[0]*(data[10]*data[15]-data[14]*data[11]) - data[8]*(data[2]*data[15]-data[14]*data[3]) + data[12]*(data[2]*data[11]-data[10]*data[3]))
-		this.raw[6] = -d * (data[0]*(data[6]*data[15]-data[14]*data[7]) - data[4]*(data[2]*data[15]-data[14]*data[3]) + data[12]*(data[2]*data[7]-data[6]*data[3]))
-		this.raw[7] = d * (data[0]*(data[6]*data[11]-data[10]*data[7]) - data[4]*(data[2]*data[11]-data[10]*data[3]) + data[8]*(data[2]*data[7]-data[6]*data[3]))
-		this.raw[8] = d * (data[4]*(data[9]*data[15]-data[13]*data[11]) - data[8]*(data[5]*data[15]-data[13]*data[7]) + data[12]*(data[5]*data[11]-data[9]*data[7]))
-		this.raw[9] = -d * (data[0]*(data[9]*data[15]-data[13]*data[11]) - data[8]*(data[1]*data[15]-data[13]*data[3]) + data[12]*(data[1]*data[11]-data[9]*data[3]))
-		this.raw[10] = d * (data[0]*(data[5]*data[15]-data[13]*data[7]) - data[4]*(data[1]*data[15]-data[13]*data[3]) + data[12]*(data[1]*data[7]-data[5]*data[3]))
-		this.raw[11] = -d * (data[0]*(data[5]*data[11]-data[9]*data[7]) - data[4]*(data[1]*data[11]-data[9]*data[3]) + data[8]*(data[1]*data[7]-data[5]*data[3]))
-		this.raw[12] = -d * (data[4]*(data[9]*data[14]-data[13]*data[10]) - data[8]*(data[5]*data[14]-data[13]*data[6]) + data[12]*(data[5]*data[10]-data[9]*data[6]))
-		this.raw[13] = d * (data[0]*(data[9]*data[14]-data[13]*data[10]) - data[8]*(data[1]*data[14]-data[13]*data[2]) + data[12]*(data[1]*data[10]-data[9]*data[2]))
-		this.raw[14] = -d * (data[0]*(data[5]*data[14]-data[13]*data[6]) - data[4]*(data[1]*data[14]-data[13]*data[2]) + data[12]*(data[1]*data[6]-data[5]*data[2]))
-		this.raw[15] = d * (data[0]*(data[5]*data[10]-data[9]*data[6]) - data[4]*(data[1]*data[10]-data[9]*data[2]) + data[8]*(data[1]*data[6]-data[5]*data[2]))
+		this.Raw[0] = d * (data[5]*(data[10]*data[15]-data[14]*data[11]) - data[9]*(data[6]*data[15]-data[14]*data[7]) + data[13]*(data[6]*data[11]-data[10]*data[7]))
+		this.Raw[1] = -d * (data[1]*(data[10]*data[15]-data[14]*data[11]) - data[9]*(data[2]*data[15]-data[14]*data[3]) + data[13]*(data[2]*data[11]-data[10]*data[3]))
+		this.Raw[2] = d * (data[1]*(data[6]*data[15]-data[14]*data[7]) - data[5]*(data[2]*data[15]-data[14]*data[3]) + data[13]*(data[2]*data[7]-data[6]*data[3]))
+		this.Raw[3] = -d * (data[1]*(data[6]*data[11]-data[10]*data[7]) - data[5]*(data[2]*data[11]-data[10]*data[3]) + data[9]*(data[2]*data[7]-data[6]*data[3]))
+		this.Raw[4] = -d * (data[4]*(data[10]*data[15]-data[14]*data[11]) - data[8]*(data[6]*data[15]-data[14]*data[7]) + data[12]*(data[6]*data[11]-data[10]*data[7]))
+		this.Raw[5] = d * (data[0]*(data[10]*data[15]-data[14]*data[11]) - data[8]*(data[2]*data[15]-data[14]*data[3]) + data[12]*(data[2]*data[11]-data[10]*data[3]))
+		this.Raw[6] = -d * (data[0]*(data[6]*data[15]-data[14]*data[7]) - data[4]*(data[2]*data[15]-data[14]*data[3]) + data[12]*(data[2]*data[7]-data[6]*data[3]))
+		this.Raw[7] = d * (data[0]*(data[6]*data[11]-data[10]*data[7]) - data[4]*(data[2]*data[11]-data[10]*data[3]) + data[8]*(data[2]*data[7]-data[6]*data[3]))
+		this.Raw[8] = d * (data[4]*(data[9]*data[15]-data[13]*data[11]) - data[8]*(data[5]*data[15]-data[13]*data[7]) + data[12]*(data[5]*data[11]-data[9]*data[7]))
+		this.Raw[9] = -d * (data[0]*(data[9]*data[15]-data[13]*data[11]) - data[8]*(data[1]*data[15]-data[13]*data[3]) + data[12]*(data[1]*data[11]-data[9]*data[3]))
+		this.Raw[10] = d * (data[0]*(data[5]*data[15]-data[13]*data[7]) - data[4]*(data[1]*data[15]-data[13]*data[3]) + data[12]*(data[1]*data[7]-data[5]*data[3]))
+		this.Raw[11] = -d * (data[0]*(data[5]*data[11]-data[9]*data[7]) - data[4]*(data[1]*data[11]-data[9]*data[3]) + data[8]*(data[1]*data[7]-data[5]*data[3]))
+		this.Raw[12] = -d * (data[4]*(data[9]*data[14]-data[13]*data[10]) - data[8]*(data[5]*data[14]-data[13]*data[6]) + data[12]*(data[5]*data[10]-data[9]*data[6]))
+		this.Raw[13] = d * (data[0]*(data[9]*data[14]-data[13]*data[10]) - data[8]*(data[1]*data[14]-data[13]*data[2]) + data[12]*(data[1]*data[10]-data[9]*data[2]))
+		this.Raw[14] = -d * (data[0]*(data[5]*data[14]-data[13]*data[6]) - data[4]*(data[1]*data[14]-data[13]*data[2]) + data[12]*(data[1]*data[6]-data[5]*data[2]))
+		this.Raw[15] = d * (data[0]*(data[5]*data[10]-data[9]*data[6]) - data[4]*(data[1]*data[10]-data[9]*data[2]) + data[8]*(data[1]*data[6]-data[5]*data[2]))
 		return true
 	}
 	return false
@@ -76,23 +76,23 @@ func (this *Matrix4x4) Append(lhs *Matrix4x4) {
 	if lhs == nil {
 		return
 	}
-	var data [16]float32 = [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
-	this.raw[0] = data[0]*lhs.raw[0] + data[1]*lhs.raw[4] + data[2]*lhs.raw[8] + data[3]*lhs.raw[12]
-	this.raw[1] = data[0]*lhs.raw[1] + data[1]*lhs.raw[5] + data[2]*lhs.raw[9] + data[3]*lhs.raw[13]
-	this.raw[2] = data[0]*lhs.raw[2] + data[1]*lhs.raw[6] + data[2]*lhs.raw[10] + data[3]*lhs.raw[14]
-	this.raw[3] = data[0]*lhs.raw[3] + data[1]*lhs.raw[7] + data[2]*lhs.raw[11] + data[3]*lhs.raw[15]
-	this.raw[4] = data[4]*lhs.raw[0] + data[5]*lhs.raw[4] + data[6]*lhs.raw[8] + data[7]*lhs.raw[12]
-	this.raw[5] = data[4]*lhs.raw[1] + data[5]*lhs.raw[5] + data[6]*lhs.raw[9] + data[7]*lhs.raw[13]
-	this.raw[6] = data[4]*lhs.raw[2] + data[5]*lhs.raw[6] + data[6]*lhs.raw[10] + data[7]*lhs.raw[14]
-	this.raw[7] = data[4]*lhs.raw[3] + data[5]*lhs.raw[7] + data[6]*lhs.raw[11] + data[7]*lhs.raw[15]
-	this.raw[8] = data[8]*lhs.raw[0] + data[9]*lhs.raw[4] + data[10]*lhs.raw[8] + data[11]*lhs.raw[12]
-	this.raw[9] = data[8]*lhs.raw[1] + data[9]*lhs.raw[5] + data[10]*lhs.raw[9] + data[11]*lhs.raw[13]
-	this.raw[10] = data[8]*lhs.raw[2] + data[9]*lhs.raw[6] + data[10]*lhs.raw[10] + data[11]*lhs.raw[14]
-	this.raw[11] = data[8]*lhs.raw[3] + data[9]*lhs.raw[7] + data[10]*lhs.raw[11] + data[11]*lhs.raw[15]
-	this.raw[12] = data[12]*lhs.raw[0] + data[13]*lhs.raw[4] + data[14]*lhs.raw[8] + data[15]*lhs.raw[12]
-	this.raw[13] = data[12]*lhs.raw[1] + data[13]*lhs.raw[5] + data[14]*lhs.raw[9] + data[15]*lhs.raw[13]
-	this.raw[14] = data[12]*lhs.raw[2] + data[13]*lhs.raw[6] + data[14]*lhs.raw[10] + data[15]*lhs.raw[14]
-	this.raw[15] = data[12]*lhs.raw[3] + data[13]*lhs.raw[7] + data[14]*lhs.raw[11] + data[15]*lhs.raw[15]
+	var data [16]float32 = [16]float32{this.Raw[0], this.Raw[1], this.Raw[2], this.Raw[3], this.Raw[4], this.Raw[5], this.Raw[6], this.Raw[7], this.Raw[8], this.Raw[9], this.Raw[10], this.Raw[11], this.Raw[12], this.Raw[13], this.Raw[14], this.Raw[15]}
+	this.Raw[0] = data[0]*lhs.Raw[0] + data[1]*lhs.Raw[4] + data[2]*lhs.Raw[8] + data[3]*lhs.Raw[12]
+	this.Raw[1] = data[0]*lhs.Raw[1] + data[1]*lhs.Raw[5] + data[2]*lhs.Raw[9] + data[3]*lhs.Raw[13]
+	this.Raw[2] = data[0]*lhs.Raw[2] + data[1]*lhs.Raw[6] + data[2]*lhs.Raw[10] + data[3]*lhs.Raw[14]
+	this.Raw[3] = data[0]*lhs.Raw[3] + data[1]*lhs.Raw[7] + data[2]*lhs.Raw[11] + data[3]*lhs.Raw[15]
+	this.Raw[4] = data[4]*lhs.Raw[0] + data[5]*lhs.Raw[4] + data[6]*lhs.Raw[8] + data[7]*lhs.Raw[12]
+	this.Raw[5] = data[4]*lhs.Raw[1] + data[5]*lhs.Raw[5] + data[6]*lhs.Raw[9] + data[7]*lhs.Raw[13]
+	this.Raw[6] = data[4]*lhs.Raw[2] + data[5]*lhs.Raw[6] + data[6]*lhs.Raw[10] + data[7]*lhs.Raw[14]
+	this.Raw[7] = data[4]*lhs.Raw[3] + data[5]*lhs.Raw[7] + data[6]*lhs.Raw[11] + data[7]*lhs.Raw[15]
+	this.Raw[8] = data[8]*lhs.Raw[0] + data[9]*lhs.Raw[4] + data[10]*lhs.Raw[8] + data[11]*lhs.Raw[12]
+	this.Raw[9] = data[8]*lhs.Raw[1] + data[9]*lhs.Raw[5] + data[10]*lhs.Raw[9] + data[11]*lhs.Raw[13]
+	this.Raw[10] = data[8]*lhs.Raw[2] + data[9]*lhs.Raw[6] + data[10]*lhs.Raw[10] + data[11]*lhs.Raw[14]
+	this.Raw[11] = data[8]*lhs.Raw[3] + data[9]*lhs.Raw[7] + data[10]*lhs.Raw[11] + data[11]*lhs.Raw[15]
+	this.Raw[12] = data[12]*lhs.Raw[0] + data[13]*lhs.Raw[4] + data[14]*lhs.Raw[8] + data[15]*lhs.Raw[12]
+	this.Raw[13] = data[12]*lhs.Raw[1] + data[13]*lhs.Raw[5] + data[14]*lhs.Raw[9] + data[15]*lhs.Raw[13]
+	this.Raw[14] = data[12]*lhs.Raw[2] + data[13]*lhs.Raw[6] + data[14]*lhs.Raw[10] + data[15]*lhs.Raw[14]
+	this.Raw[15] = data[12]*lhs.Raw[3] + data[13]*lhs.Raw[7] + data[14]*lhs.Raw[11] + data[15]*lhs.Raw[15]
 }
 func (this *Matrix4x4) AppendRotation(degrees float32, axis *Vector4, pivotPoint *Vector4) {
 	tx, ty, tz := float32(0), float32(0), float32(0)
@@ -111,54 +111,54 @@ func (this *Matrix4x4) AppendRotation(degrees float32, axis *Vector4, pivotPoint
 	}
 	ccos := 1 - cos
 	mtx := new(Matrix4x4)
-	mtx.raw[0] = x2 + (y2+z2)*cos
-	mtx.raw[1] = x*y*ccos + z*sin
-	mtx.raw[2] = x*z*ccos - y*sin
-	mtx.raw[4] = x*y*ccos - z*sin
-	mtx.raw[5] = y2 + (x2+z2)*cos
-	mtx.raw[6] = y*z*ccos + x*sin
-	mtx.raw[8] = x*z*ccos + y*sin
-	mtx.raw[9] = y*z*ccos - x*sin
-	mtx.raw[10] = z2 + (x2+y2)*cos
-	mtx.raw[12] = (tx*(y2+z2)-x*(ty*y+tz*z))*ccos + (ty*z-tz*y)*sin
-	mtx.raw[13] = (ty*(x2+z2)-y*(tx*x+tz*z))*ccos + (tz*x-tx*z)*sin
-	mtx.raw[14] = (tz*(x2+y2)-z*(tx*x+ty*y))*ccos + (tx*y-ty*x)*sin
+	mtx.Raw[0] = x2 + (y2+z2)*cos
+	mtx.Raw[1] = x*y*ccos + z*sin
+	mtx.Raw[2] = x*z*ccos - y*sin
+	mtx.Raw[4] = x*y*ccos - z*sin
+	mtx.Raw[5] = y2 + (x2+z2)*cos
+	mtx.Raw[6] = y*z*ccos + x*sin
+	mtx.Raw[8] = x*z*ccos + y*sin
+	mtx.Raw[9] = y*z*ccos - x*sin
+	mtx.Raw[10] = z2 + (x2+y2)*cos
+	mtx.Raw[12] = (tx*(y2+z2)-x*(ty*y+tz*z))*ccos + (ty*z-tz*y)*sin
+	mtx.Raw[13] = (ty*(x2+z2)-y*(tx*x+tz*z))*ccos + (tz*x-tx*z)*sin
+	mtx.Raw[14] = (tz*(x2+y2)-z*(tx*x+ty*y))*ccos + (tx*y-ty*x)*sin
 	this.Append(mtx)
 }
 func (this *Matrix4x4) ApendScale(xScale float32, yScale float32, zScale float32) {
 	mtx := new(Matrix4x4)
 	mtx.Matrix4x4(nil)
-	mtx.raw[0] = xScale
-	mtx.raw[5] = yScale
-	mtx.raw[10] = zScale
+	mtx.Raw[0] = xScale
+	mtx.Raw[5] = yScale
+	mtx.Raw[10] = zScale
 	this.Append(mtx)
 }
 func (this *Matrix4x4) AppendTranslation(x float32, y float32, z float32) {
-	this.raw[12] += x
-	this.raw[13] += y
-	this.raw[14] += z
+	this.Raw[12] += x
+	this.Raw[13] += y
+	this.Raw[14] += z
 }
 func (this *Matrix4x4) Prepend(rhs *Matrix4x4) {
 	if rhs == nil {
 		return
 	}
-	var data [16]float32 = [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
-	this.raw[0] = rhs.raw[0]*data[0] + rhs.raw[1]*data[4] + rhs.raw[2]*data[8] + rhs.raw[3]*data[12]
-	this.raw[1] = rhs.raw[0]*data[1] + rhs.raw[1]*data[5] + rhs.raw[2]*data[9] + rhs.raw[3]*data[13]
-	this.raw[2] = rhs.raw[0]*data[2] + rhs.raw[1]*data[6] + rhs.raw[2]*data[10] + rhs.raw[3]*data[14]
-	this.raw[3] = rhs.raw[0]*data[3] + rhs.raw[1]*data[7] + rhs.raw[2]*data[11] + rhs.raw[3]*data[15]
-	this.raw[4] = rhs.raw[4]*data[0] + rhs.raw[5]*data[4] + rhs.raw[6]*data[8] + rhs.raw[7]*data[12]
-	this.raw[5] = rhs.raw[4]*data[1] + rhs.raw[5]*data[5] + rhs.raw[6]*data[9] + rhs.raw[7]*data[13]
-	this.raw[6] = rhs.raw[4]*data[2] + rhs.raw[5]*data[6] + rhs.raw[6]*data[10] + rhs.raw[7]*data[14]
-	this.raw[7] = rhs.raw[4]*data[3] + rhs.raw[5]*data[7] + rhs.raw[6]*data[11] + rhs.raw[7]*data[15]
-	this.raw[8] = rhs.raw[8]*data[0] + rhs.raw[9]*data[4] + rhs.raw[10]*data[8] + rhs.raw[11]*data[12]
-	this.raw[9] = rhs.raw[8]*data[1] + rhs.raw[9]*data[5] + rhs.raw[10]*data[9] + rhs.raw[11]*data[13]
-	this.raw[10] = rhs.raw[8]*data[2] + rhs.raw[9]*data[6] + rhs.raw[10]*data[10] + rhs.raw[11]*data[14]
-	this.raw[11] = rhs.raw[8]*data[3] + rhs.raw[9]*data[7] + rhs.raw[10]*data[11] + rhs.raw[11]*data[15]
-	this.raw[12] = rhs.raw[12]*data[0] + rhs.raw[13]*data[4] + rhs.raw[14]*data[8] + rhs.raw[15]*data[12]
-	this.raw[13] = rhs.raw[12]*data[1] + rhs.raw[13]*data[5] + rhs.raw[14]*data[9] + rhs.raw[15]*data[13]
-	this.raw[14] = rhs.raw[12]*data[2] + rhs.raw[13]*data[6] + rhs.raw[14]*data[10] + rhs.raw[15]*data[14]
-	this.raw[15] = rhs.raw[12]*data[3] + rhs.raw[13]*data[7] + rhs.raw[14]*data[11] + rhs.raw[15]*data[15]
+	var data [16]float32 = [16]float32{this.Raw[0], this.Raw[1], this.Raw[2], this.Raw[3], this.Raw[4], this.Raw[5], this.Raw[6], this.Raw[7], this.Raw[8], this.Raw[9], this.Raw[10], this.Raw[11], this.Raw[12], this.Raw[13], this.Raw[14], this.Raw[15]}
+	this.Raw[0] = rhs.Raw[0]*data[0] + rhs.Raw[1]*data[4] + rhs.Raw[2]*data[8] + rhs.Raw[3]*data[12]
+	this.Raw[1] = rhs.Raw[0]*data[1] + rhs.Raw[1]*data[5] + rhs.Raw[2]*data[9] + rhs.Raw[3]*data[13]
+	this.Raw[2] = rhs.Raw[0]*data[2] + rhs.Raw[1]*data[6] + rhs.Raw[2]*data[10] + rhs.Raw[3]*data[14]
+	this.Raw[3] = rhs.Raw[0]*data[3] + rhs.Raw[1]*data[7] + rhs.Raw[2]*data[11] + rhs.Raw[3]*data[15]
+	this.Raw[4] = rhs.Raw[4]*data[0] + rhs.Raw[5]*data[4] + rhs.Raw[6]*data[8] + rhs.Raw[7]*data[12]
+	this.Raw[5] = rhs.Raw[4]*data[1] + rhs.Raw[5]*data[5] + rhs.Raw[6]*data[9] + rhs.Raw[7]*data[13]
+	this.Raw[6] = rhs.Raw[4]*data[2] + rhs.Raw[5]*data[6] + rhs.Raw[6]*data[10] + rhs.Raw[7]*data[14]
+	this.Raw[7] = rhs.Raw[4]*data[3] + rhs.Raw[5]*data[7] + rhs.Raw[6]*data[11] + rhs.Raw[7]*data[15]
+	this.Raw[8] = rhs.Raw[8]*data[0] + rhs.Raw[9]*data[4] + rhs.Raw[10]*data[8] + rhs.Raw[11]*data[12]
+	this.Raw[9] = rhs.Raw[8]*data[1] + rhs.Raw[9]*data[5] + rhs.Raw[10]*data[9] + rhs.Raw[11]*data[13]
+	this.Raw[10] = rhs.Raw[8]*data[2] + rhs.Raw[9]*data[6] + rhs.Raw[10]*data[10] + rhs.Raw[11]*data[14]
+	this.Raw[11] = rhs.Raw[8]*data[3] + rhs.Raw[9]*data[7] + rhs.Raw[10]*data[11] + rhs.Raw[11]*data[15]
+	this.Raw[12] = rhs.Raw[12]*data[0] + rhs.Raw[13]*data[4] + rhs.Raw[14]*data[8] + rhs.Raw[15]*data[12]
+	this.Raw[13] = rhs.Raw[12]*data[1] + rhs.Raw[13]*data[5] + rhs.Raw[14]*data[9] + rhs.Raw[15]*data[13]
+	this.Raw[14] = rhs.Raw[12]*data[2] + rhs.Raw[13]*data[6] + rhs.Raw[14]*data[10] + rhs.Raw[15]*data[14]
+	this.Raw[15] = rhs.Raw[12]*data[3] + rhs.Raw[13]*data[7] + rhs.Raw[14]*data[11] + rhs.Raw[15]*data[15]
 }
 func (this *Matrix4x4) PrependRotation(degrees float32, axis *Vector4, pivotPoint *Vector4) {
 	tx, ty, tz := float32(0), float32(0), float32(0)
@@ -177,46 +177,46 @@ func (this *Matrix4x4) PrependRotation(degrees float32, axis *Vector4, pivotPoin
 	}
 	ccos := 1 - cos
 	mtx := new(Matrix4x4)
-	mtx.raw[0] = x2 + (y2+z2)*cos
-	mtx.raw[1] = x*y*ccos + z*sin
-	mtx.raw[2] = x*z*ccos - y*sin
-	mtx.raw[4] = x*y*ccos - z*sin
-	mtx.raw[5] = y2 + (x2+z2)*cos
-	mtx.raw[6] = y*z*ccos + x*sin
-	mtx.raw[8] = x*z*ccos + y*sin
-	mtx.raw[9] = y*z*ccos - x*sin
-	mtx.raw[10] = z2 + (x2+y2)*cos
-	mtx.raw[12] = (tx*(y2+z2)-x*(ty*y+tz*z))*ccos + (ty*z-tz*y)*sin
-	mtx.raw[13] = (ty*(x2+z2)-y*(tx*x+tz*z))*ccos + (tz*x-tx*z)*sin
-	mtx.raw[14] = (tz*(x2+y2)-z*(tx*x+ty*y))*ccos + (tx*y-ty*x)*sin
+	mtx.Raw[0] = x2 + (y2+z2)*cos
+	mtx.Raw[1] = x*y*ccos + z*sin
+	mtx.Raw[2] = x*z*ccos - y*sin
+	mtx.Raw[4] = x*y*ccos - z*sin
+	mtx.Raw[5] = y2 + (x2+z2)*cos
+	mtx.Raw[6] = y*z*ccos + x*sin
+	mtx.Raw[8] = x*z*ccos + y*sin
+	mtx.Raw[9] = y*z*ccos - x*sin
+	mtx.Raw[10] = z2 + (x2+y2)*cos
+	mtx.Raw[12] = (tx*(y2+z2)-x*(ty*y+tz*z))*ccos + (ty*z-tz*y)*sin
+	mtx.Raw[13] = (ty*(x2+z2)-y*(tx*x+tz*z))*ccos + (tz*x-tx*z)*sin
+	mtx.Raw[14] = (tz*(x2+y2)-z*(tx*x+ty*y))*ccos + (tx*y-ty*x)*sin
 	this.Prepend(mtx)
 }
 func (this *Matrix4x4) PrependScale(xScale float32, yScale float32, zScale float32) {
 	mtx := new(Matrix4x4)
 	mtx.Matrix4x4(nil)
-	mtx.raw[0] = xScale
-	mtx.raw[5] = yScale
-	mtx.raw[10] = zScale
+	mtx.Raw[0] = xScale
+	mtx.Raw[5] = yScale
+	mtx.Raw[10] = zScale
 	this.Prepend(mtx)
 }
 func (this *Matrix4x4) PrependTranslation(x float32, y float32, z float32) {
 	mtx := new(Matrix4x4)
 	mtx.Matrix4x4(nil)
-	mtx.raw[12] = x
-	mtx.raw[13] = y
-	mtx.raw[14] = z
+	mtx.Raw[12] = x
+	mtx.Raw[13] = y
+	mtx.Raw[14] = z
 	this.Prepend(mtx)
 }
 func (this *Matrix4x4) DeltaTransformVector(v *Vector4) *Vector4 {
 	x, y, z := v.X, v.Y, v.Z
-	return &Vector4{X: x*this.raw[0] + y*this.raw[4] + z*this.raw[8] + this.raw[3], Y: x*this.raw[1] + y*this.raw[5] + z*this.raw[9] + this.raw[7], Z: x*this.raw[2] + y*this.raw[6] + z*this.raw[10] + this.raw[11], W: 1.0}
+	return &Vector4{X: x*this.Raw[0] + y*this.Raw[4] + z*this.Raw[8] + this.Raw[3], Y: x*this.Raw[1] + y*this.Raw[5] + z*this.Raw[9] + this.Raw[7], Z: x*this.Raw[2] + y*this.Raw[6] + z*this.Raw[10] + this.Raw[11], W: 1.0}
 }
 func (this *Matrix4x4) TransformVector(v *Vector4) *Vector4 {
 	var target Vector4
-	target.X = v.X*this.raw[0] + v.Y*this.raw[4] + v.Z*this.raw[8]
-	target.Y = v.X*this.raw[1] + v.Y*this.raw[5] + v.Z*this.raw[9]
-	target.Z = v.X*this.raw[2] + v.Y*this.raw[6] + v.Z*this.raw[10]
-	target.W = v.X*this.raw[3] + v.Y*this.raw[7] + v.Z*this.raw[11]
+	target.X = v.X*this.Raw[0] + v.Y*this.Raw[4] + v.Z*this.Raw[8]
+	target.Y = v.X*this.Raw[1] + v.Y*this.Raw[5] + v.Z*this.Raw[9]
+	target.Z = v.X*this.Raw[2] + v.Y*this.Raw[6] + v.Z*this.Raw[10]
+	target.W = v.X*this.Raw[3] + v.Y*this.Raw[7] + v.Z*this.Raw[11]
 	return &target
 }
 func (this *Matrix4x4) TransformVectorList(vl []*Vector4) []*Vector4 {
@@ -325,22 +325,22 @@ func (this *Matrix4x4) Recompose(components [3]*Vector4, orientationStyle string
 		sx := float32(math.Sin(float64(components[1].X)))
 		sy := float32(math.Sin(float64(components[1].Y)))
 		sz := float32(math.Sin(float64(components[1].Z)))
-		this.raw[0] = cy * cz * scale[0]
-		this.raw[1] = cy * sz * scale[1]
-		this.raw[2] = -sy * scale[2]
-		this.raw[3] = 0
-		this.raw[4] = (sx*sy*cz - cx*sz) * scale[4]
-		this.raw[5] = (sx*sy*sz + cx*cz) * scale[5]
-		this.raw[6] = sx * cy * scale[6]
-		this.raw[7] = 0
-		this.raw[8] = (cx*sy*cz + sx*sz) * scale[8]
-		this.raw[9] = (cx*sy*sz - sx*cz) * scale[9]
-		this.raw[10] = cx * cy * scale[10]
-		this.raw[11] = 0
-		this.raw[12] = components[0].X
-		this.raw[13] = components[0].Y
-		this.raw[14] = components[0].Z
-		this.raw[15] = 1
+		this.Raw[0] = cy * cz * scale[0]
+		this.Raw[1] = cy * sz * scale[1]
+		this.Raw[2] = -sy * scale[2]
+		this.Raw[3] = 0
+		this.Raw[4] = (sx*sy*cz - cx*sz) * scale[4]
+		this.Raw[5] = (sx*sy*sz + cx*cz) * scale[5]
+		this.Raw[6] = sx * cy * scale[6]
+		this.Raw[7] = 0
+		this.Raw[8] = (cx*sy*cz + sx*sz) * scale[8]
+		this.Raw[9] = (cx*sy*sz - sx*cz) * scale[9]
+		this.Raw[10] = cx * cy * scale[10]
+		this.Raw[11] = 0
+		this.Raw[12] = components[0].X
+		this.Raw[13] = components[0].Y
+		this.Raw[14] = components[0].Z
+		this.Raw[15] = 1
 	default:
 		x := components[1].X
 		y := components[1].Y
@@ -352,68 +352,68 @@ func (this *Matrix4x4) Recompose(components [3]*Vector4, orientationStyle string
 			z *= float32(math.Sin(float64(w * .5)))
 			w = float32(math.Cos(float64(w * .5)))
 		}
-		this.raw[0] = (1 - 2*y*y - 2*z*z) * scale[0]
-		this.raw[1] = (2*x*y + 2*w*z) * scale[1]
-		this.raw[2] = (2*x*z - 2*w*y) * scale[2]
-		this.raw[3] = 0
-		this.raw[4] = (2*x*y - 2*w*z) * scale[4]
-		this.raw[5] = (1 - 2*x*x - 2*z*z) * scale[5]
-		this.raw[6] = (2*y*z + 2*w*x) * scale[6]
-		this.raw[7] = 0
-		this.raw[8] = (2*x*z + 2*w*y) * scale[8]
-		this.raw[9] = (2*y*z - 2*w*x) * scale[9]
-		this.raw[10] = (1 - 2*x*x - 2*y*y) * scale[10]
-		this.raw[11] = 0
-		this.raw[12] = components[0].X
-		this.raw[13] = components[0].Y
-		this.raw[14] = components[0].Z
-		this.raw[15] = 1
+		this.Raw[0] = (1 - 2*y*y - 2*z*z) * scale[0]
+		this.Raw[1] = (2*x*y + 2*w*z) * scale[1]
+		this.Raw[2] = (2*x*z - 2*w*y) * scale[2]
+		this.Raw[3] = 0
+		this.Raw[4] = (2*x*y - 2*w*z) * scale[4]
+		this.Raw[5] = (1 - 2*x*x - 2*z*z) * scale[5]
+		this.Raw[6] = (2*y*z + 2*w*x) * scale[6]
+		this.Raw[7] = 0
+		this.Raw[8] = (2*x*z + 2*w*y) * scale[8]
+		this.Raw[9] = (2*y*z - 2*w*x) * scale[9]
+		this.Raw[10] = (1 - 2*x*x - 2*y*y) * scale[10]
+		this.Raw[11] = 0
+		this.Raw[12] = components[0].X
+		this.Raw[13] = components[0].Y
+		this.Raw[14] = components[0].Z
+		this.Raw[15] = 1
 	}
 	if components[2].X == 0 {
-		this.raw[0] = 1e-15
+		this.Raw[0] = 1e-15
 	}
 	if components[2].Y == 0 {
-		this.raw[5] = 1e-15
+		this.Raw[5] = 1e-15
 	}
 	if components[2].Z == 0 {
-		this.raw[10] = 1e-15
+		this.Raw[10] = 1e-15
 	}
 	return !(components[2].X == 0 || components[2].Y == 0 || components[2].Y == 0)
 }
 func (this *Matrix4x4) Determinant() float32 {
-	return ((this.raw[0]*this.raw[5]-this.raw[4]*this.raw[1])*(this.raw[10]*this.raw[15]-this.raw[14]*this.raw[11]) - (this.raw[0]*this.raw[9]-this.raw[8]*this.raw[1])*(this.raw[6]*this.raw[15]-this.raw[14]*this.raw[7]) + (this.raw[0]*this.raw[13]-this.raw[12]*this.raw[1])*(this.raw[6]*this.raw[11]-this.raw[10]*this.raw[7]) + (this.raw[4]*this.raw[9]-this.raw[8]*this.raw[5])*(this.raw[2]*this.raw[15]-this.raw[14]*this.raw[3]) - (this.raw[4]*this.raw[13]-this.raw[12]*this.raw[5])*(this.raw[2]*this.raw[11]-this.raw[10]*this.raw[3]) + (this.raw[8]*this.raw[13]-this.raw[12]*this.raw[9])*(this.raw[2]*this.raw[7]-this.raw[6]*this.raw[3]))
+	return ((this.Raw[0]*this.Raw[5]-this.Raw[4]*this.Raw[1])*(this.Raw[10]*this.Raw[15]-this.Raw[14]*this.Raw[11]) - (this.Raw[0]*this.Raw[9]-this.Raw[8]*this.Raw[1])*(this.Raw[6]*this.Raw[15]-this.Raw[14]*this.Raw[7]) + (this.Raw[0]*this.Raw[13]-this.Raw[12]*this.Raw[1])*(this.Raw[6]*this.Raw[11]-this.Raw[10]*this.Raw[7]) + (this.Raw[4]*this.Raw[9]-this.Raw[8]*this.Raw[5])*(this.Raw[2]*this.Raw[15]-this.Raw[14]*this.Raw[3]) - (this.Raw[4]*this.Raw[13]-this.Raw[12]*this.Raw[5])*(this.Raw[2]*this.Raw[11]-this.Raw[10]*this.Raw[3]) + (this.Raw[8]*this.Raw[13]-this.Raw[12]*this.Raw[9])*(this.Raw[2]*this.Raw[7]-this.Raw[6]*this.Raw[3]))
 }
 func (this *Matrix4x4) Position() *Vector4 {
-	return &Vector4{X: this.raw[12], Y: this.raw[13], Z: this.raw[14], W: 1.0}
+	return &Vector4{X: this.Raw[12], Y: this.Raw[13], Z: this.Raw[14], W: 1.0}
 }
 func (this *Matrix4x4) GetRaw() [16]float32 {
-	raw := [16]float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
+	raw := [16]float32{this.Raw[0], this.Raw[1], this.Raw[2], this.Raw[3], this.Raw[4], this.Raw[5], this.Raw[6], this.Raw[7], this.Raw[8], this.Raw[9], this.Raw[10], this.Raw[11], this.Raw[12], this.Raw[13], this.Raw[14], this.Raw[15]}
 	return raw
 }
 func (this *Matrix4x4) GetRawSlice() []float32 {
-	raw := []float32{this.raw[0], this.raw[1], this.raw[2], this.raw[3], this.raw[4], this.raw[5], this.raw[6], this.raw[7], this.raw[8], this.raw[9], this.raw[10], this.raw[11], this.raw[12], this.raw[13], this.raw[14], this.raw[15]}
+	raw := []float32{this.Raw[0], this.Raw[1], this.Raw[2], this.Raw[3], this.Raw[4], this.Raw[5], this.Raw[6], this.Raw[7], this.Raw[8], this.Raw[9], this.Raw[10], this.Raw[11], this.Raw[12], this.Raw[13], this.Raw[14], this.Raw[15]}
 	return raw
 }
 func (this *Matrix4x4) Clone() Matrix4x4 {
 	m := Matrix4x4{}
-	m.Matrix4x4(&this.raw)
+	m.Matrix4x4(&this.Raw)
 	return m
 }
 func (this *Matrix4x4) ToArray() []float32 {
-	array := this.raw[:]
+	array := this.Raw[:]
 	return array
 }
 func (this *Matrix4x4) ToBinary() []byte {
 	var byteArray []byte
 	buff := bytes.NewBuffer(byteArray)
-	for _, v := range this.raw {
+	for _, v := range this.Raw {
 		binary.Write(buff, binary.BigEndian, v)
 	}
 	return byteArray
 }
 func (this *Matrix4x4) ToString() string {
 	str := "Matrix4x4[ "
-	for _, v := range this.raw {
+	for _, v := range this.Raw {
 		str += fmt.Sprintf("%f ", v)
 	}
 	str += "]"
