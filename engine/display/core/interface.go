@@ -18,7 +18,7 @@ type IContext interface {
 	SetClearColor(red float32, green float32, blue float32, alpha float32)
 	SetDepthTest(depthMask bool, passCompareMode string)
 	SetProgram(program platform.IProgram3D)
-	SetVertexBufferAt(value string, stride int32, bufferOffset int, format string)
+	SetVertexBufferAt(value string, stride int32, bufferOffset int32, format string)
 	DrawTriangles(indexBuffer platform.IIndexBuffer, firstIndex int32, numTriangles int32)
 	Present()
 }

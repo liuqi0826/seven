@@ -9,12 +9,13 @@ import (
 )
 
 type SubGeometry struct {
-	ID        string
-	UsedCount int32
-	Uploaded  bool
+	ID string
 
 	IndexBuffer  platform.IIndexBuffer
 	VertexBuffer [8]platform.IVertexBuffer
+
+	usedCount int32
+	uploaded  bool
 
 	geometryResource *resource.GeometryResource
 }
@@ -29,6 +30,7 @@ func (this *SubGeometry) SubGeometry(geometryResource *resource.GeometryResource
 func (this *SubGeometry) Upload(context core.IContext) error {
 	var err error
 	this.IndexBuffer = context.CreateIndexBuffer()
+	//fmt.Println("upload", this.IndexBuffer)
 	if this.IndexBuffer != nil {
 		err = this.IndexBuffer.Upload(this.geometryResource.Geometrie.Index)
 		if err != nil {
@@ -48,7 +50,7 @@ func (this *SubGeometry) Upload(context core.IContext) error {
 			}
 		}
 	}
-	this.Uploaded = true
+	this.uploaded = true
 	return err
 }
 func (this *SubGeometry) GetIndexBuffer() platform.IIndexBuffer {
@@ -57,6 +59,20 @@ func (this *SubGeometry) GetIndexBuffer() platform.IIndexBuffer {
 func (this *SubGeometry) GetVertexBuffer() *[8]platform.IVertexBuffer {
 	return &this.VertexBuffer
 }
+func (this *SubGeometry) AddCount() {
+	this.usedCount++
+}
+func (this *SubGeometry) SubCount() {
+	if this.usedCount > 0 {
+		this.usedCount--
+	}
+}
+func (this *SubGeometry) GetCount() int32 {
+	return this.usedCount
+}
+func (this *SubGeometry) IsReady() bool {
+	return this.uploaded
+}
 func (this *SubGeometry) Dispose() {
-	this.Uploaded = false
+	this.uploaded = false
 }

@@ -1,7 +1,7 @@
 package opengl
 
 import (
-	"github.com/go-gl/gl/v4.5-core/gl"
+	"github.com/liuqi0826/seven/api/khronos/gl/gl"
 )
 
 type VertexBuffer struct {
@@ -10,7 +10,7 @@ type VertexBuffer struct {
 
 func (this *VertexBuffer) Upload(data []float32) error {
 	var err error
-	gl.BufferData(gl.ARRAY_BUFFER, len(data)*4, gl.Ptr(data), gl.STATIC_DRAW)
+	gl.BufferData(gl.GL_ARRAY_BUFFER, int64(len(data)*4), data, gl.GL_STATIC_DRAW)
 	return err
 }
 func (this *VertexBuffer) Dispose() {

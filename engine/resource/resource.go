@@ -32,6 +32,10 @@ type ResourceManager struct {
 	geometryRuntime map[string]*base.SubGeometry
 	materialRuntime map[string]*base.Material
 	shaderRuntime   map[string]platform.IProgram3D
+
+	shaderUploadQueue    []*ShaderUploader
+	geometrieUploadQueue []*GeometrieUploader
+	materialUploadQueue  []*MaterialUploader
 }
 
 func (this *ResourceManager) Setup(context core.IContext) error {
@@ -51,6 +55,10 @@ func (this *ResourceManager) Setup(context core.IContext) error {
 	this.geometryRuntime = make(map[string]*base.SubGeometry)
 	this.materialRuntime = make(map[string]*base.Material)
 	this.shaderRuntime = make(map[string]platform.IProgram3D)
+
+	this.shaderUploadQueue = make([]*ShaderUploader, 0)
+	this.geometrieUploadQueue = make([]*GeometrieUploader, 0)
+	this.materialUploadQueue = make([]*MaterialUploader, 0)
 
 	this.pretreatment()
 
@@ -225,23 +233,25 @@ func (this *ResourceManager) GetShader(id string) *resource.ShaderResource {
 
 func (this *ResourceManager) CreateSubgeometrie(id string) *base.SubGeometry {
 	if geometry, ok := this.geometryRuntime[id]; ok {
-		geometry.UsedCount++
+		geometry.AddCount()
 		return geometry
 	} else {
 		resource := this.GetGeometrie(id)
 		if resource != nil {
 			subGeometry := new(base.SubGeometry)
+			subGeometry.AddCount()
 			this.geometryRuntime[id] = subGeometry
 
-			subGeometry.SubGeometry(resource)
-			subGeometry.UsedCount++
+			this.Lock()
+			gu := new(GeometrieUploader)
+			gu.Target = subGeometry
+			gu.Resource = resource
+			this.geometrieUploadQueue = append(this.geometrieUploadQueue, gu)
+			this.Unlock()
 
-			event := new(events.Event)
-			event.Type = static.RESOURCE_EVENT
-			event.Data = func() {
-				subGeometry.Upload(this.context3D)
-			}
-			this.DispatchEvent(event)
+			evt := new(events.Event)
+			evt.Type = static.RESOURCE_EVENT
+			this.DispatchEvent(evt)
 
 			return subGeometry
 		}
@@ -252,21 +262,22 @@ func (this *ResourceManager) CreateMaterial(id string) *base.Material {
 	if material, ok := this.materialRuntime[id]; ok {
 		return material
 	} else {
-		fmt.Println(id)
 		resource := this.GetMaterial(id)
 		if resource != nil {
 			material := new(base.Material)
+			material.AddCount()
 			this.materialRuntime[id] = material
 
-			material.Material(resource)
-			material.AddCount()
+			this.Lock()
+			mu := new(MaterialUploader)
+			mu.Target = material
+			mu.Resource = resource
+			this.materialUploadQueue = append(this.materialUploadQueue, mu)
+			this.Unlock()
 
-			event := new(events.Event)
-			event.Type = static.RESOURCE_EVENT
-			event.Data = func() {
-				material.Upload()
-			}
-			this.DispatchEvent(event)
+			evt := new(events.Event)
+			evt.Type = static.RESOURCE_EVENT
+			this.DispatchEvent(evt)
 
 			return material
 		} else {
@@ -284,18 +295,6 @@ func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D 
 		if resource != nil {
 			switch static.API {
 			case static.GL:
-				shader := this.context3D.CreateProgram()
-				this.shaderRuntime[id] = shader
-				shader.AddCount()
-
-				event := new(events.Event)
-				event.Type = static.RESOURCE_EVENT
-				event.Data = func() {
-					shader.Upload(resource.Vertex, resource.Fragment)
-				}
-				this.DispatchEvent(event)
-
-				return shader
 			case static.VULKAN:
 			case static.D3D9:
 			case static.D3D12:
@@ -306,14 +305,62 @@ func (this *ResourceManager) CreateShaderProgram(id string) platform.IProgram3D 
 	}
 	return nil
 }
+func (this *ResourceManager) Upload() {
+	this.Lock()
+	defer this.Unlock()
+
+	var su, gu, mu bool
+	for _, s := range this.shaderUploadQueue {
+		s.Target = this.context3D.CreateProgram()
+		s.Target.Upload(s.Resource.Vertex, s.Resource.Fragment)
+		su = true
+	}
+	for _, g := range this.geometrieUploadQueue {
+		g.Target.SubGeometry(g.Resource)
+		g.Target.Upload(this.context3D)
+		gu = true
+	}
+	for _, m := range this.materialUploadQueue {
+		m.Target.Material(m.Resource)
+		m.Target.Upload()
+		mu = true
+	}
+	if su {
+		this.shaderUploadQueue = make([]*ShaderUploader, 0)
+	}
+	if gu {
+		this.geometrieUploadQueue = make([]*GeometrieUploader, 0)
+	}
+	if mu {
+		this.materialUploadQueue = make([]*MaterialUploader, 0)
+	}
+}
 func (this *ResourceManager) pretreatment() {
 	switch static.API {
 	case static.GL:
 		for _, v := range opengl.ShaderResource {
 			this.AddShader(v)
+
+			//现阶段所有shader在开始时统一创建上传
+			shader := this.context3D.CreateProgram()
+			shader.Upload(v.Vertex, v.Fragment)
+			this.shaderRuntime[v.ID] = shader
 		}
 	case static.VULKAN:
 	case static.D3D9:
 	case static.D3D12:
 	}
+}
+
+type ShaderUploader struct {
+	Target   platform.IProgram3D
+	Resource *resource.ShaderResource
+}
+type GeometrieUploader struct {
+	Target   *base.SubGeometry
+	Resource *resource.GeometryResource
+}
+type MaterialUploader struct {
+	Target   *base.Material
+	Resource *resource.MaterialResource
 }

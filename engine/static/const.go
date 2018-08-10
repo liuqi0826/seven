@@ -10,6 +10,7 @@ const (
 )
 
 const (
+	ACTION_EVENT   = "actionEvent"
 	RESOURCE_EVENT = "resourceEvent"
 )
 

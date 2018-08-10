@@ -1,7 +1,5 @@
 package platform
 
-import ()
-
 type IIndexBuffer interface {
 	Upload(data []uint16) error
 	Dispose()
@@ -15,6 +13,7 @@ type IProgram3D interface {
 	SubCount()
 	GetCount() uint32
 	Upload(vertexProgram string, fragmentProgram string) error
+	IsReady() bool
 	Dispose()
 }
 type ITexture interface {

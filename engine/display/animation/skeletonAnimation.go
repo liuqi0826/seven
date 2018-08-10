@@ -1,7 +1,7 @@
 package animation
 
 import (
-	"fmt"
+	//"fmt"
 	"time"
 
 	"github.com/liuqi0826/seven/engine/display/resource"
@@ -107,7 +107,7 @@ func (this *SkeletonAnimationClip) Update() {
 		}
 		for _, channel := range this.animationChannelList {
 			channel.Update(this.currentTime)
-			fmt.Println(channel.GetCurrentTransform().GetRaw())
+			//fmt.Println(channel.GetCurrentTransform().GetRaw())
 		}
 	}
 }

@@ -28,6 +28,12 @@ func (this *Sprite) Sprite(geometry []*base.SubGeometry, material *base.Material
 
 	this.animation = make([]core.IAnimation, 0)
 }
+func (this *Sprite) SetCamera(camera core.ICamera) {
+	this.DisplayObject.SetCamera(camera)
+	if this.renderer != nil {
+		this.renderer.SetCamera(camera)
+	}
+}
 func (this *Sprite) AddAnimation(anim core.IAnimation) {
 	this.animation = append(this.animation, anim)
 }

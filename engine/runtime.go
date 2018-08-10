@@ -11,7 +11,7 @@ import (
 	"github.com/liuqi0826/seven/engine/display"
 	"github.com/liuqi0826/seven/engine/display/core"
 	"github.com/liuqi0826/seven/engine/display/platform/opengl"
-	//"github.com/liuqi0826/seven/engine/display/platform/vulkan"
+	"github.com/liuqi0826/seven/engine/display/platform/vulkan"
 	"github.com/liuqi0826/seven/engine/global"
 	"github.com/liuqi0826/seven/engine/input"
 	"github.com/liuqi0826/seven/engine/resource"
@@ -46,12 +46,14 @@ type Engine struct {
 	config        *utils.Config
 	instanceIndex uint32
 
-	actionList []func()
+	actionList    []func()
+	actionChannel chan func()
 }
 
 func (this *Engine) Engine() {
 	this.instanceIndex = 0
 	this.actionList = make([]func(), 0)
+	this.actionChannel = make(chan func(), 256)
 }
 func (this *Engine) Setup(config *utils.Config) error {
 	var err error
@@ -70,10 +72,11 @@ func (this *Engine) Setup(config *utils.Config) error {
 		return err
 	}
 
-	glfw.WindowHint(glfw.Resizable, glfw.False)
-	//glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	//glfw.WindowHint(glfw.ContextVersionMinor, 5)
-	//glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	//glfw.WindowHint(glfw.Resizable, glfw.False)
+	//glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	glfw.WindowHint(glfw.ContextVersionMinor, 6)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCompatProfile)
 	//glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	this.Window, err = glfw.CreateWindow(this.config.WindowWidth, this.config.WindowHeight, this.config.WindowTitle, nil, nil)
@@ -89,17 +92,18 @@ func (this *Engine) Setup(config *utils.Config) error {
 	case static.GL:
 		global.Context3D = new(opengl.Context)
 	case static.VULKAN:
+		global.Context3D = new(vulkan.Context)
 	case static.D3D9:
 	case static.D3D12:
 	}
-
-	err = global.Context3D.Setup(this.Window, this.config.Debug)
-	utils.Check("context", err)
 
 	this.KeyboardManager = new(input.KeyboardManager)
 	this.KeyboardManager.Setup(this.Window)
 	this.MouseManager = new(input.MouseManager)
 	this.MouseManager.Setup(this.Window)
+
+	err = global.Context3D.Setup(this.Window, this.config.Debug)
+	utils.Check("context", err)
 
 	global.ResourceManager = new(resource.ResourceManager)
 	global.ResourceManager.Setup(global.Context3D)
@@ -116,7 +120,7 @@ func (this *Engine) GetNextInstanceID() string {
 	this.instanceIndex++
 	return fmt.Sprintf("%d", this.instanceIndex)
 }
-func (this *Engine) Start() {
+func (this *Engine) Start(function func()) {
 	if this.Ready {
 		this.Alive = true
 		if this.config.FrameInterval == 0 {
@@ -126,6 +130,12 @@ func (this *Engine) Start() {
 		this.Stage = new(Stage)
 		this.Stage.setup(this)
 
+		go this.actionListion()
+
+		if function != nil {
+			go function()
+		}
+
 		for this.Alive {
 			this.frame()
 		}
@@ -134,22 +144,32 @@ func (this *Engine) Start() {
 func (this *Engine) Stop() {
 	this.Alive = false
 }
+func (this *Engine) AddActionOSThread(function func()) {
+	this.actionChannel <- function
+}
 func (this *Engine) Destroy() {
 	glfw.Terminate()
 }
 
 func (this *Engine) onResourceEvent(event *events.Event) {
-	if fun, ok := event.Data.(func()); ok {
-		this.actionList = append(this.actionList, fun)
+	this.AddActionOSThread(global.ResourceManager.Upload)
+}
+func (this *Engine) actionListion() {
+	for act := range this.actionChannel {
+		this.Lock()
+		this.actionList = append(this.actionList, act)
+		this.Unlock()
 	}
 }
 func (this *Engine) action() {
 	this.Lock()
+	defer this.Unlock()
 	for _, fun := range this.actionList {
-		fun()
+		if fun != nil {
+			fun()
+		}
 	}
 	this.actionList = make([]func(), 0)
-	this.Unlock()
 }
 func (this *Engine) frame() {
 	if this.Window.ShouldClose() {

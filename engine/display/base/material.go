@@ -12,7 +12,7 @@ type Material struct {
 
 	texture [8]platform.ITexture
 
-	userCount          uint32
+	usedCount          int32
 	uploadTextureCount int32
 	uploaded           bool
 
@@ -53,16 +53,19 @@ func (this *Material) Bind() {
 	}
 }
 func (this *Material) AddCount() {
-	this.userCount++
+	this.usedCount++
 }
 func (this *Material) SubCount() {
-	if this.userCount > 0 {
-		this.userCount--
+	if this.usedCount > 0 {
+		this.usedCount--
 	}
 }
-func (this *Material) GetCount() uint32 {
-	return this.userCount
+func (this *Material) GetCount() int32 {
+	return this.usedCount
+}
+func (this *Material) IsReady() bool {
+	return this.uploaded
 }
 func (this *Material) Dispose() {
-
+	this.uploaded = false
 }

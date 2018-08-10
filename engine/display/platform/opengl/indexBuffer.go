@@ -3,7 +3,7 @@ package opengl
 import (
 	"errors"
 
-	"github.com/go-gl/gl/v4.5-core/gl"
+	"github.com/liuqi0826/seven/api/khronos/gl/gl"
 )
 
 type IndexBuffer struct {
@@ -17,7 +17,7 @@ func (this *IndexBuffer) Upload(data []uint16) error {
 	if this.Length > 65535 {
 		err = errors.New("Data is large than 65535.")
 	} else {
-		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, this.Length*2, gl.Ptr(data), gl.STATIC_DRAW)
+		gl.BufferData(gl.GL_ELEMENT_ARRAY_BUFFER, int64(this.Length*2), data, gl.GL_STATIC_DRAW)
 	}
 	return err
 }
