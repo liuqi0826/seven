@@ -2,6 +2,7 @@ package network
 
 import (
 	//"fmt"
+
 	"net"
 	"net/http"
 	"strings"
@@ -20,6 +21,7 @@ type Listener struct {
 	netType     string
 	address     string
 	pattern     string
+	wsConfig    *WebSocketConfig
 }
 
 func (this *Listener) Listener() {
@@ -41,13 +43,14 @@ func (this *Listener) Listen(netType string, address string, extra interface{}) 
 		utils.ErrorHandle("Listener ListenTCP...", err)
 	case NETWORK_TYPE_UDP:
 	case NETWORK_TYPE_WEB_SOCKET:
-		if u, ok := extra.(string); ok {
-			if u == "" {
+		if cfg, ok := extra.(*WebSocketConfig); ok {
+			this.wsConfig = cfg
+			if this.wsConfig.URL == "" {
 				this.pattern = "/"
-			} else if strings.Index(u, "/") < 0 {
-				this.pattern = "/" + u
+			} else if strings.Index(this.wsConfig.URL, "/") < 0 {
+				this.pattern = "/" + this.wsConfig.URL
 			} else {
-				this.pattern = u
+				this.pattern = this.wsConfig.URL
 			}
 		} else {
 			this.pattern = "/"
@@ -123,7 +126,11 @@ func (this *Listener) listen() {
 	case NETWORK_TYPE_UDP:
 	case NETWORK_TYPE_WEB_SOCKET:
 		http.HandleFunc(this.pattern, this.onWebsocket)
-		http.ListenAndServe(this.address, nil)
+		if this.wsConfig != nil && this.wsConfig.SSLCRT != "" && this.wsConfig.SSLKey != "" {
+			http.ListenAndServeTLS(this.address, this.wsConfig.SSLCRT, this.wsConfig.SSLKey, nil)
+		} else {
+			http.ListenAndServe(this.address, nil)
+		}
 	}
 }
 func (this *Listener) onWebsocket(w http.ResponseWriter, r *http.Request) {

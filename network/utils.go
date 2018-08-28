@@ -12,6 +12,12 @@ const (
 	NETWORK_TYPE_WEB_SOCKET = "webSocket"
 )
 
+type WebSocketConfig struct {
+	URL    string
+	SSLCRT string
+	SSLKey string
+}
+
 func TCPConnect(n *Network, addr string) {
 	for {
 		conn, err := net.Dial("tcp", addr)
