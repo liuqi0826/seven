@@ -1,7 +1,5 @@
 package events
 
-import ()
-
 const (
 	ADDED       = "added"
 	CANCEL      = "cancel"
@@ -22,6 +20,7 @@ const (
 	RESIZE      = "resize"
 	SCROLL      = "scroll"
 	SELECT      = "select"
+	MESSAGE     = "message"
 
 	CLICK             = "click"
 	DOUBLE_CLICK      = "doubleClick"
@@ -38,8 +37,9 @@ const (
 	ROLL_OUT          = "rollOut"
 	ROLL_OVER         = "rollOver"
 
-	KEY_DOWN = "keyDown"
-	KEY_UP   = "keyUp"
+	KEY_DOWN  = "keyDown"
+	KEY_UP    = "keyUp"
+	KEY_PRESS = "keyPress"
 
 	ERROR    = "error"
 	IO_ERROR = "ioError"
@@ -49,4 +49,24 @@ type Event struct {
 	Type   string
 	Target interface{}
 	Data   interface{}
+}
+
+type MouseEventData struct {
+	X         float32
+	Y         float32
+	MovementX float32
+	MovementY float32
+	AltKey    bool
+	CtrlKey   bool
+	ShiftKey  bool
+	Delta     int32
+}
+
+type KeyboardEventData struct {
+	CharCode uint32
+	KeyCode  uint32
+	Key      string
+	AltKey   bool
+	CtrlKey  bool
+	ShiftKey bool
 }
